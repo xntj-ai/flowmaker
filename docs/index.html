@@ -1,0 +1,227 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>flowmaker · Single-HTML web flowchart generator</title>
+<meta name="description" content="flowmaker is a Claude Code / Agent skill: one line of process description becomes a single-file, zero-backend, drag-to-edit web flowchart with the three standard shapes — decision diamond, terminator pill, process rectangle. Drag nodes, reroute edges, rename inline, right in the browser.">
+<link rel="canonical" href="https://xntj-ai.github.io/flowmaker/">
+<link rel="alternate" hreflang="en" href="https://xntj-ai.github.io/flowmaker/">
+<link rel="alternate" hreflang="zh-Hans" href="https://xntj-ai.github.io/flowmaker/index.zh.html">
+<link rel="alternate" hreflang="x-default" href="https://xntj-ai.github.io/flowmaker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="flowmaker · Single-HTML web flowchart generator">
+<meta property="og:description" content="One line of process description → a single-file, zero-backend, drag-to-edit web flowchart. A Claude Code / Agent skill.">
+<meta property="og:locale" content="en_US">
+<style>
+:root{
+  --bg:#FAF8F4; --surf:#FFFFFF; --line:#ECE6DC; --line2:#E2DACB;
+  --ink:#2A2722; --ink2:#6B6356; --mut:#9A9082;
+  --gold:#C8922E; --gold2:#F0B24A; --jade:#1f6f5c; --terra:#B4502E; --blue:#3E6B8C;
+  --r:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,system-ui,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.1px}
+a{color:var(--gold);text-decoration:none} a:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:0 auto;padding:30px 28px 90px}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:8px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px;font-weight:740;font-size:16px;letter-spacing:-.2px}
+.brand .tag{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--gold);
+  background:#FAF1DF;border:1px solid #EBD9B6;padding:2px 9px;border-radius:20px;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:16px;font-size:13.5px;color:var(--ink2)}
+.nav .lang{color:var(--mut)} .nav .lang b{color:var(--ink)}
+
+/* hero */
+.kicker{font-size:12.5px;letter-spacing:2.5px;color:var(--gold);font-weight:700;text-transform:uppercase}
+h1{font-size:38px;line-height:1.18;letter-spacing:-.6px;margin:14px 0 12px;font-weight:790}
+.lead{color:var(--ink2);font-size:17px;max-width:760px;margin:0}
+.intro{color:var(--ink2);font-size:15.5px;max-width:800px;margin:18px 0 0}
+
+h2{font-size:23px;letter-spacing:-.3px;margin:62px 0 6px;font-weight:730;display:flex;align-items:center;gap:11px}
+h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);flex:none}
+.sub{color:var(--ink2);font-size:14.5px;margin:0 0 4px}
+.note{color:var(--mut);font-size:13px;margin-top:12px;line-height:1.6}
+b{font-weight:680}
+code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+  background:#F3EEE5;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--terra)}
+
+/* pipeline flow */
+.flow{display:flex;align-items:stretch;gap:10px;margin-top:26px;flex-wrap:wrap}
+.fstep{flex:1;min-width:158px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 17px;position:relative;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.fstep .fk{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.fstep h4{margin:8px 0 6px;font-size:15.5px;font-weight:730;letter-spacing:-.2px}
+.fstep p{margin:0;font-size:13px;color:var(--ink2);line-height:1.55}
+.fstep.fin{border-color:#E6C98A;background:linear-gradient(180deg,#FFFDF8,#FFF)}
+.fstep.fin .fk{color:var(--gold)}
+.farr{display:flex;align-items:center;color:#CDB892;font-size:22px;font-weight:400;flex:none;padding:0 2px}
+@media(max-width:720px){.farr{transform:rotate(90deg);align-self:center;padding:3px 0}.fstep{min-width:100%}.flow{flex-direction:column}}
+
+/* shapes */
+.shapes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.shape{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px 18px;text-align:center;
+  box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.shape svg{display:block;margin:0 auto 14px}
+.shape .sn{font-size:15px;font-weight:730} .shape .se{font-size:12.5px;color:var(--mut);letter-spacing:.5px}
+.shape p{margin:8px 0 0;font-size:13px;color:var(--ink2);line-height:1.55}
+.variants{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.vchip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2);
+  background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:5px 12px}
+.vdot{width:10px;height:10px;border-radius:50%;flex:none}
+@media(max-width:720px){.shapes{grid-template-columns:1fr}}
+
+/* architecture */
+.arch{margin-top:24px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;
+  box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.archcdn{max-width:360px;margin:0 auto;text-align:center;border:1px dashed var(--line2);border-radius:12px;
+  padding:11px 14px;font-size:13px;color:var(--ink2);background:#FBF8F2}
+.archcdn b{color:var(--ink)}
+.archpipe{width:1px;height:26px;background:var(--line2);margin:0 auto;position:relative}
+.archpipe::after{content:"▼";position:absolute;left:-6px;bottom:-4px;color:#CDB892;font-size:11px}
+.archfile{border:1.5px solid var(--gold);border-radius:14px;padding:8px 8px 14px;background:#FFFDF8;max-width:560px;margin:0 auto;position:relative}
+.archfile .ft{display:inline-block;font-size:12px;font-weight:720;color:var(--gold);background:#FFFDF8;
+  padding:0 10px;position:relative;top:-18px;left:8px;letter-spacing:.3px}
+.archrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:-6px;padding:0 8px}
+.archbox{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+.archbox .bk{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.archbox h4{margin:5px 0 4px;font-size:14px;font-weight:720} .archbox p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.archnote{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.anote{font-size:12.5px;color:var(--jade);background:#E3EFE9;border:1px solid #CDE5DB;border-radius:20px;padding:4px 13px;font-weight:600}
+@media(max-width:720px){.archrow{grid-template-columns:1fr}}
+
+/* feature cards */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px 22px 20px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+.card h3{margin:0 0 8px;font-size:16.5px;font-weight:730;letter-spacing:-.2px}
+.card p{margin:0;color:var(--ink2);font-size:14px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+
+/* two panels */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px;align-items:start}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.panel .pk{font-size:11.5px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase}
+.panel.ok .pk{color:var(--jade)} .panel.no .pk{color:var(--terra)}
+.panel h3{margin:6px 0 0;font-size:16px;font-weight:730}
+.panel ul{margin:12px 0 0;padding-left:18px;color:var(--ink2);font-size:14px} .panel li{margin:6px 0}
+@media(max-width:720px){.two{grid-template-columns:1fr}}
+
+/* quick start */
+.steps{counter-reset:s;margin-top:24px;display:grid;gap:12px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;background:var(--surf);
+  border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.step::before{counter-increment:s;content:counter(s);width:28px;height:28px;border-radius:50%;
+  background:#FAF1DF;border:1px solid #EBD9B6;color:var(--gold);font-weight:760;font-size:14px;
+  display:flex;align-items:center;justify-content:center}
+.step>div{min-width:0} .step h4{margin:2px 0 4px;font-size:15px;font-weight:720} .step p{margin:0;font-size:13.5px;color:var(--ink2)}
+pre{background:#2A2722;color:#F3EEE5;border-radius:10px;padding:13px 15px;overflow-x:auto;font-size:12.5px;
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;line-height:1.6;margin:8px 0 0}
+
+footer{margin-top:74px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:22px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--ink2)}
+</style></head><body><div class="wrap">
+
+<div class="topbar">
+  <div class="brand">flowmaker <span class="tag">Claude Code Skill</span></div>
+  <div class="nav">
+    <span class="lang"><b>English</b> · <a href="./index.zh.html">中文</a></span>
+    <a href="https://github.com/xntj-ai/flowmaker">GitHub ↗</a>
+  </div>
+</div>
+
+<div class="kicker">Process visualization · Single-HTML output</div>
+<h1>Turn one line of process<br>into an editable web flowchart</h1>
+<p class="lead">flowmaker is a Claude Code / Agent skill. Hand it a process and it produces a <b>self-contained <code>.html</code> file</b>: a light, glassmorphism flowchart with decision diamonds, start/end pills, and process rectangles that you can drag, reconnect, rename, and edit right in the browser.</p>
+<p class="intro">Unlike "text to flowchart" tools that hand you a static image or a Mermaid block — useless the moment someone wants to move a box, fix a label, or add a branch — flowmaker's output is a real, editable artifact. Double-click to open; no server, no build, nothing to install. Email it, drop it into a wiki, or hand it to a non-technical colleague and they can rearrange it in the browser.</p>
+
+<h2><span class="dot"></span>How it works</h2>
+<p class="sub">From one line to an editable flowchart in four steps.</p>
+<div class="flow">
+  <div class="fstep"><div class="fk">Input</div><h4>Describe the process</h4><p>Spell out the start, key steps, decision branches and where each branch goes — in plain language.</p></div>
+  <div class="farr">→</div>
+  <div class="fstep"><div class="fk">AI generates</div><h4>Turn it into data</h4><p>Claude breaks the process into <code>nodes</code> + <code>edges</code> JSON, omitting coordinates so layout is automatic.</p></div>
+  <div class="farr">→</div>
+  <div class="fstep"><div class="fk">Assemble</div><h4>Inject the template</h4><p>The JSON drops into <code>template.html</code>; the rendering engine is already built in.</p></div>
+  <div class="farr">→</div>
+  <div class="fstep fin"><div class="fk">Output</div><h4>Single-HTML flowchart</h4><p>Open in a browser and interact: drag nodes, reroute edges, double-click to rename.</p></div>
+</div>
+<p class="note">A model is optional — the engine lives in <code>assets/template.html</code>, so you can hand-write the JSON yourself.</p>
+
+<h2><span class="dot"></span>Three standard shapes</h2>
+<p class="sub">Flowchart semantics come from shape; flowmaker ships three.</p>
+<div class="shapes">
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><rect x="6" y="10" width="120" height="42" rx="9" fill="#fff" stroke="#C8922E" stroke-width="1.6"/></svg>
+    <div class="sn">process <span class="se">处理</span></div>
+    <p>Ordinary steps, actions, operations. The default shape.</p>
+  </div>
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><rect x="6" y="10" width="120" height="42" rx="21" fill="#fff" stroke="#3E6B8C" stroke-width="1.6"/></svg>
+    <div class="sn">terminator <span class="se">起止</span></div>
+    <p>Start and end of the flow. Start in blue, end in gold.</p>
+  </div>
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><polygon points="66,8 124,31 66,54 8,31" fill="#fff" stroke="#C8922E" stroke-width="1.6"/></svg>
+    <div class="sn">decision <span class="se">判断</span></div>
+    <p>Branch points. Phrase the title as a question; draw "yes/no" edges out.</p>
+  </div>
+</div>
+<div class="variants">
+  <span class="vchip"><span class="vdot" style="background:#9A9082"></span>Normal</span>
+  <span class="vchip"><span class="vdot" style="background:#3E6B8C"></span>start · blue</span>
+  <span class="vchip"><span class="vdot" style="background:#C8922E"></span>gold · emphasis</span>
+  <span class="vchip"><span class="vdot" style="background:#C9BEA9"></span>muted · weak branch</span>
+</div>
+
+<h2><span class="dot"></span>How it runs</h2>
+<p class="sub">One file, zero backend — everything is inside this <code>.html</code>.</p>
+<div class="arch">
+  <div class="archcdn"><b>esm.sh CDN</b><br>Loads React Flow + dagre + htm at runtime</div>
+  <div class="archpipe"></div>
+  <div class="archfile">
+    <span class="ft">A single .html file</span>
+    <div class="archrow">
+      <div class="archbox"><div class="bk">Data</div><h4>Your process JSON</h4><p>nodes + edges, inlined in a <code>&lt;script&gt;</code> tag.</p></div>
+      <div class="archbox"><div class="bk">Engine</div><h4>Render + edit</h4><p>Auto-layout, three shapes, drag interactions — all bundled.</p></div>
+    </div>
+  </div>
+  <div class="archnote">
+    <span class="anote">No server</span>
+    <span class="anote">No build step</span>
+    <span class="anote">Double-click to open</span>
+  </div>
+</div>
+<p class="note">The look is light-mode ppvi: frosted-glass nodes, gold / blue / gray state colors, and decision diamonds drawn as evenly-stroked SVG polygons so sharp corners never smear into gray.</p>
+
+<h2><span class="dot"></span>Core features</h2>
+<div class="cards">
+  <div class="card"><h3>Single file, zero backend</h3><p>React Flow and dagre load from a CDN at runtime — no build, no server, nothing to deploy.</p></div>
+  <div class="card"><h3>Visual editing</h3><p>Drag to lay out, pull from a handle to draw an edge, double-click to edit title / shape / color, click an edge to relabel, Delete to remove.</p></div>
+  <div class="card"><h3>Automatic layout</h3><p>Give only nodes and edges and dagre lays them out (top-down or left-right); add coordinates only for a pixel-exact version.</p></div>
+  <div class="card"><h3>Detail popovers</h3><p>Push long content (commands, configs, steps) into a "详情 ▾" modal instead of bloating the node — layouts stay tight.</p></div>
+</div>
+
+<h2><span class="dot"></span>When to use</h2>
+<div class="two">
+  <div class="panel ok"><div class="pk">Good fit</div><h3>Editable &amp; self-contained</h3>
+    <ul><li>Approval flows, onboarding steps, decision trees, system processes</li><li>Charts you hand off that the recipient can still edit</li><li>Anything that should be one standalone HTML with no backend</li></ul></div>
+  <div class="panel no"><div class="pk">Not for</div><h3>Static or server-side bulk</h3>
+    <ul><li>Just a static diagram — a Mermaid block is lighter</li><li>Server-rendered charts produced in bulk</li><li>Complex graph editors needing collaboration or version control</li></ul></div>
+</div>
+
+<h2><span class="dot"></span>Quick start</h2>
+<div class="steps">
+  <div class="step"><div><h4>Install into your Claude Code skills directory</h4><pre>git clone https://github.com/xntj-ai/flowmaker.git ~/.claude/skills/flowmaker</pre></div></div>
+  <div class="step"><div><h4>Describe a process to Claude</h4><p>For example, "use flowmaker to turn this approval process into an editable web flowchart" — it fills the gaps, builds the data, and outputs an <code>.html</code> file.</p></div></div>
+  <div class="step"><div><h4>Open in a browser and tweak</h4><p>Drag nodes, reroute edges, rename — and it's a deliverable. Or skip Claude entirely: copy <code>assets/template.html</code> and swap in your JSON.</p></div></div>
+</div>
+
+<footer>
+  <span>flowmaker · MIT License · © <a href="https://xntj.tv">张拼拼 · XNTJ</a></span>
+  <span><a href="https://github.com/xntj-ai/flowmaker">GitHub</a> · <a href="https://github.com/xntj-ai/ppvi">ppvi design system</a> · <a href="./index.zh.html">中文</a></span>
+</footer>
+
+</div></body></html>

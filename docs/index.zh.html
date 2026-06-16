@@ -1,0 +1,227 @@
+<!doctype html><html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>flowmaker · 单 HTML 网页流程图生成器</title>
+<meta name="description" content="flowmaker 是一个 Claude Code / Agent 技能:一句话流程描述 → 一个单 HTML、零后端、可拖拽编辑的网页流程图,带判断菱形/起止圆角条/处理矩形三种标准形状,浏览器里即可拖节点、改连线、双击重命名。">
+<link rel="canonical" href="https://xntj-ai.github.io/flowmaker/index.zh.html">
+<link rel="alternate" hreflang="zh-Hans" href="https://xntj-ai.github.io/flowmaker/index.zh.html">
+<link rel="alternate" hreflang="en" href="https://xntj-ai.github.io/flowmaker/">
+<link rel="alternate" hreflang="x-default" href="https://xntj-ai.github.io/flowmaker/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="flowmaker · 单 HTML 网页流程图生成器">
+<meta property="og:description" content="一句话流程描述 → 一个单 HTML、零后端、可拖拽编辑的网页流程图。Claude Code / Agent 技能。">
+<meta property="og:locale" content="zh_CN">
+<style>
+:root{
+  --bg:#FAF8F4; --surf:#FFFFFF; --line:#ECE6DC; --line2:#E2DACB;
+  --ink:#2A2722; --ink2:#6B6356; --mut:#9A9082;
+  --gold:#C8922E; --gold2:#F0B24A; --jade:#1f6f5c; --terra:#B4502E; --blue:#3E6B8C;
+  --r:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",Segoe UI,system-ui,sans-serif;
+  font-size:15px;line-height:1.7;-webkit-font-smoothing:antialiased;letter-spacing:.1px}
+a{color:var(--gold);text-decoration:none} a:hover{text-decoration:underline}
+.wrap{max-width:1080px;margin:0 auto;padding:30px 28px 90px}
+
+/* top bar */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding-bottom:22px;border-bottom:1px solid var(--line);margin-bottom:8px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:11px;font-weight:740;font-size:16px;letter-spacing:-.2px}
+.brand .tag{font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--gold);
+  background:#FAF1DF;border:1px solid #EBD9B6;padding:2px 9px;border-radius:20px;text-transform:uppercase}
+.nav{display:flex;align-items:center;gap:16px;font-size:13.5px;color:var(--ink2)}
+.nav .lang{color:var(--mut)} .nav .lang b{color:var(--ink)}
+
+/* hero */
+.kicker{font-size:12.5px;letter-spacing:2.5px;color:var(--gold);font-weight:700;text-transform:uppercase}
+h1{font-size:38px;line-height:1.18;letter-spacing:-.6px;margin:14px 0 12px;font-weight:790}
+.lead{color:var(--ink2);font-size:17px;max-width:760px;margin:0}
+.intro{color:var(--ink2);font-size:15.5px;max-width:800px;margin:18px 0 0}
+
+h2{font-size:23px;letter-spacing:-.3px;margin:62px 0 6px;font-weight:730;display:flex;align-items:center;gap:11px}
+h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--gold);flex:none}
+.sub{color:var(--ink2);font-size:14.5px;margin:0 0 4px}
+.note{color:var(--mut);font-size:13px;margin-top:12px;line-height:1.6}
+b{font-weight:680}
+code{font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;
+  background:#F3EEE5;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--terra)}
+
+/* pipeline flow */
+.flow{display:flex;align-items:stretch;gap:10px;margin-top:26px;flex-wrap:wrap}
+.fstep{flex:1;min-width:158px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);
+  padding:18px 17px;position:relative;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.fstep .fk{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.fstep h4{margin:8px 0 6px;font-size:15.5px;font-weight:730;letter-spacing:-.2px}
+.fstep p{margin:0;font-size:13px;color:var(--ink2);line-height:1.55}
+.fstep.fin{border-color:#E6C98A;background:linear-gradient(180deg,#FFFDF8,#FFF)}
+.fstep.fin .fk{color:var(--gold)}
+.farr{display:flex;align-items:center;color:#CDB892;font-size:22px;font-weight:400;flex:none;padding:0 2px}
+@media(max-width:720px){.farr{transform:rotate(90deg);align-self:center;padding:3px 0}.fstep{min-width:100%}.flow{flex-direction:column}}
+
+/* shapes */
+.shapes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:24px}
+.shape{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px 18px;text-align:center;
+  box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.shape svg{display:block;margin:0 auto 14px}
+.shape .sn{font-size:15px;font-weight:730} .shape .se{font-size:12.5px;color:var(--mut);letter-spacing:.5px}
+.shape p{margin:8px 0 0;font-size:13px;color:var(--ink2);line-height:1.55}
+.variants{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.vchip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink2);
+  background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:5px 12px}
+.vdot{width:10px;height:10px;border-radius:50%;flex:none}
+@media(max-width:720px){.shapes{grid-template-columns:1fr}}
+
+/* architecture */
+.arch{margin-top:24px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:26px 24px;
+  box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.archcdn{max-width:360px;margin:0 auto;text-align:center;border:1px dashed var(--line2);border-radius:12px;
+  padding:11px 14px;font-size:13px;color:var(--ink2);background:#FBF8F2}
+.archcdn b{color:var(--ink)}
+.archpipe{width:1px;height:26px;background:var(--line2);margin:0 auto;position:relative}
+.archpipe::after{content:"▼";position:absolute;left:-6px;bottom:-4px;color:#CDB892;font-size:11px}
+.archfile{border:1.5px solid var(--gold);border-radius:14px;padding:8px 8px 14px;background:#FFFDF8;max-width:560px;margin:0 auto;position:relative}
+.archfile .ft{display:inline-block;font-size:12px;font-weight:720;color:var(--gold);background:#FFFDF8;
+  padding:0 10px;position:relative;top:-18px;left:8px;letter-spacing:.3px}
+.archrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:-6px;padding:0 8px}
+.archbox{background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:13px 14px}
+.archbox .bk{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--mut);font-weight:700}
+.archbox h4{margin:5px 0 4px;font-size:14px;font-weight:720} .archbox p{margin:0;font-size:12.5px;color:var(--ink2);line-height:1.5}
+.archnote{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+.anote{font-size:12.5px;color:var(--jade);background:#E3EFE9;border:1px solid #CDE5DB;border-radius:20px;padding:4px 13px;font-weight:600}
+@media(max-width:720px){.archrow{grid-template-columns:1fr}}
+
+/* feature cards */
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:24px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px 22px 20px;position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold)}
+.card h3{margin:0 0 8px;font-size:16.5px;font-weight:730;letter-spacing:-.2px}
+.card p{margin:0;color:var(--ink2);font-size:14px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+
+/* two panels */
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:24px;align-items:start}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:22px;box-shadow:0 1px 2px rgba(42,39,34,.03)}
+.panel .pk{font-size:11.5px;letter-spacing:1.5px;font-weight:700;text-transform:uppercase}
+.panel.ok .pk{color:var(--jade)} .panel.no .pk{color:var(--terra)}
+.panel h3{margin:6px 0 0;font-size:16px;font-weight:730}
+.panel ul{margin:12px 0 0;padding-left:18px;color:var(--ink2);font-size:14px} .panel li{margin:6px 0}
+@media(max-width:720px){.two{grid-template-columns:1fr}}
+
+/* quick start */
+.steps{counter-reset:s;margin-top:24px;display:grid;gap:12px}
+.step{display:grid;grid-template-columns:34px 1fr;gap:14px;align-items:start;background:var(--surf);
+  border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+.step::before{counter-increment:s;content:counter(s);width:28px;height:28px;border-radius:50%;
+  background:#FAF1DF;border:1px solid #EBD9B6;color:var(--gold);font-weight:760;font-size:14px;
+  display:flex;align-items:center;justify-content:center}
+.step>div{min-width:0} .step h4{margin:2px 0 4px;font-size:15px;font-weight:720} .step p{margin:0;font-size:13.5px;color:var(--ink2)}
+pre{background:#2A2722;color:#F3EEE5;border-radius:10px;padding:13px 15px;overflow-x:auto;font-size:12.5px;
+  font-family:"SF Mono",ui-monospace,Menlo,Consolas,monospace;line-height:1.6;margin:8px 0 0}
+
+footer{margin-top:74px;color:var(--mut);font-size:12.5px;border-top:1px solid var(--line);padding-top:22px;
+  display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--ink2)}
+</style></head><body><div class="wrap">
+
+<div class="topbar">
+  <div class="brand">flowmaker <span class="tag">Claude Code 技能</span></div>
+  <div class="nav">
+    <span class="lang"><b>中文</b> · <a href="./index.html">English</a></span>
+    <a href="https://github.com/xntj-ai/flowmaker">GitHub ↗</a>
+  </div>
+</div>
+
+<div class="kicker">流程可视化 · 单 HTML 产物</div>
+<h1>把一句话流程,<br>变成可编辑的网页流程图</h1>
+<p class="lead">flowmaker 是一个 Claude Code / Agent 技能。给它一段流程,它就产出一个<b>自包含的 <code>.html</code> 文件</b>:浅色玻璃拟态风格,带判断菱形、起止圆角条、处理矩形三种标准形状,在浏览器里就能拖节点、改连线、双击重命名、增删。</p>
+<p class="intro">和"文字转流程图"工具不同 —— 它们给你一张静态图或一段 Mermaid,只要有人想挪个框、改个字、加个分支就卡住了。flowmaker 的产物是一个真正可编辑的成品:双击文件即开,没有服务端,不用构建,也不必安装任何东西。可以邮件发出去、塞进 wiki,或者直接丢给不懂技术的同事,对方在浏览器里就能重新排布。</p>
+
+<h2><span class="dot"></span>工作流程</h2>
+<p class="sub">从一句话到可编辑流程图,中间只有四步。</p>
+<div class="flow">
+  <div class="fstep"><div class="fk">输入</div><h4>描述流程</h4><p>用自然语言讲清起点、关键步骤、判断分支与各分支去向。</p></div>
+  <div class="farr">→</div>
+  <div class="fstep"><div class="fk">AI 生成</div><h4>拆成数据</h4><p>Claude 把流程拆成 <code>nodes</code> + <code>edges</code> 的 JSON,优先省略坐标交给自动布局。</p></div>
+  <div class="farr">→</div>
+  <div class="fstep"><div class="fk">装配</div><h4>注入模板</h4><p>把 JSON 写进 <code>template.html</code>,渲染引擎已内置在模板里。</p></div>
+  <div class="farr">→</div>
+  <div class="fstep fin"><div class="fk">产出</div><h4>单 HTML 流程图</h4><p>浏览器打开即可交互:拖节点、改连线、双击重命名、增删。</p></div>
+</div>
+<p class="note">不一定要有大模型 —— 引擎本身就在 <code>assets/template.html</code> 里,你也可以手写 JSON 直接替换。</p>
+
+<h2><span class="dot"></span>三种标准形状</h2>
+<p class="sub">流程图的语义靠形状区分,flowmaker 内置三种。</p>
+<div class="shapes">
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><rect x="6" y="10" width="120" height="42" rx="9" fill="#fff" stroke="#C8922E" stroke-width="1.6"/></svg>
+    <div class="sn">处理 <span class="se">process</span></div>
+    <p>普通步骤、动作、操作。默认形状。</p>
+  </div>
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><rect x="6" y="10" width="120" height="42" rx="21" fill="#fff" stroke="#3E6B8C" stroke-width="1.6"/></svg>
+    <div class="sn">起止 <span class="se">terminator</span></div>
+    <p>流程的开始与结束。起点配蓝、终点配金。</p>
+  </div>
+  <div class="shape">
+    <svg width="132" height="62" viewBox="0 0 132 62"><polygon points="66,8 124,31 66,54 8,31" fill="#fff" stroke="#C8922E" stroke-width="1.6"/></svg>
+    <div class="sn">判断 <span class="se">decision</span></div>
+    <p>分支点。标题用问句,向外引"是/否"两三条边。</p>
+  </div>
+</div>
+<div class="variants">
+  <span class="vchip"><span class="vdot" style="background:#9A9082"></span>普通</span>
+  <span class="vchip"><span class="vdot" style="background:#3E6B8C"></span>start · 蓝色起点</span>
+  <span class="vchip"><span class="vdot" style="background:#C8922E"></span>gold · 金色强调</span>
+  <span class="vchip"><span class="vdot" style="background:#C9BEA9"></span>muted · 灰色弱分支</span>
+</div>
+
+<h2><span class="dot"></span>运行架构</h2>
+<p class="sub">一个文件,零后端 —— 所有东西都在这张 <code>.html</code> 里。</p>
+<div class="arch">
+  <div class="archcdn"><b>esm.sh CDN</b><br>运行时加载 React Flow + dagre + htm</div>
+  <div class="archpipe"></div>
+  <div class="archfile">
+    <span class="ft">单个 .html 文件</span>
+    <div class="archrow">
+      <div class="archbox"><div class="bk">数据</div><h4>你的流程 JSON</h4><p>nodes + edges,内联在 <code>&lt;script&gt;</code> 标签里。</p></div>
+      <div class="archbox"><div class="bk">引擎</div><h4>渲染 + 编辑</h4><p>自动布局、三种形状、拖拽交互,全封装好。</p></div>
+    </div>
+  </div>
+  <div class="archnote">
+    <span class="anote">无服务器</span>
+    <span class="anote">无构建步骤</span>
+    <span class="anote">双击即开</span>
+  </div>
+</div>
+<p class="note">视觉为浅色 ppvi:玻璃磨砂节点、金/蓝/灰状态色,判断菱形用 SVG 多边形均匀描边绘制,锐角不会糊成灰块。</p>
+
+<h2><span class="dot"></span>核心特性</h2>
+<div class="cards">
+  <div class="card"><h3>单文件 · 零后端</h3><p>React Flow 与 dagre 在运行时从 CDN 加载,无需构建、无需服务器,也没有任何部署环节。</p></div>
+  <div class="card"><h3>可视化编辑</h3><p>拖拽布局、从节点圆点拉出连线、双击节点改标题/形状/配色、单击连线改文字、Delete 键删除。</p></div>
+  <div class="card"><h3>自动布局</h3><p>只给 nodes 和 edges,dagre 就自动排版(从上到下或从左到右);要精确版式时才手动给坐标。</p></div>
+  <div class="card"><h3>详情浮层</h3><p>把命令、配置、详细步骤收进「详情 ▾」弹层,而不是把节点撑大,保持版面紧凑。</p></div>
+</div>
+
+<h2><span class="dot"></span>适用场景</h2>
+<div class="two">
+  <div class="panel ok"><div class="pk">适合</div><h3>要可编辑、要独立文件</h3>
+    <ul><li>审批流、入职步骤、决策树、系统流程</li><li>要交给别人、对方还能自己改的流程图</li><li>要打包成一个不带后端的独立 HTML</li></ul></div>
+  <div class="panel no"><div class="pk">不适合</div><h3>纯静态 / 服务端批量</h3>
+    <ul><li>只要一张静态示意图 —— 直接用 Mermaid 更轻</li><li>服务端批量渲染的大量图表</li><li>需要协同编辑、版本管理的复杂图编辑器</li></ul></div>
+</div>
+
+<h2><span class="dot"></span>快速开始</h2>
+<div class="steps">
+  <div class="step"><div><h4>装进 Claude Code 技能目录</h4><pre>git clone https://github.com/xntj-ai/flowmaker.git ~/.claude/skills/flowmaker</pre></div></div>
+  <div class="step"><div><h4>对 Claude 描述流程</h4><p>比如"用 flowmaker 把这个审批流程画成可编辑的网页流程图",它会补齐信息、生成数据、产出 <code>.html</code>。</p></div></div>
+  <div class="step"><div><h4>浏览器打开,随手改</h4><p>拖节点、改连线、双击重命名 —— 改完就是交付物。也可不经 Claude,直接复制 <code>assets/template.html</code> 换 JSON。</p></div></div>
+</div>
+
+<footer>
+  <span>flowmaker · MIT License · © <a href="https://xntj.tv">张拼拼 · XNTJ</a></span>
+  <span><a href="https://github.com/xntj-ai/flowmaker">GitHub</a> · <a href="https://github.com/xntj-ai/ppvi">ppvi 设计体系</a> · <a href="./index.html">English</a></span>
+</footer>
+
+</div></body></html>
