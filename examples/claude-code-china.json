@@ -1,0 +1,57 @@
+{
+  "title": "国内安装 Claude Code 接入智谱 GLM · 小白攻略",
+  "subtitle": "节点是步骤概述，点蓝色「详情 ▾」看分系统的完整命令与解释 · 链接可点 · 右上角可导出 PNG",
+  "direction": "TB",
+  "nodes": [
+    { "id": "start", "kicker": "Start", "title": "开始", "sub": "从零跟着做", "shape": "terminator", "variant": "start",
+      "detail": "<p><b>Claude Code</b> 是 Anthropic 出的命令行 AI 编程工具——在终端里就能让 AI 帮你读写代码、跑命令、修 bug。</p><p>这份攻略带你<b>从零</b>装好，并接入国内可直连的<b>智谱 GLM</b>，全程不用每天挂代理。每一步点「详情 ▾」都有分系统的完整命令和解释。</p>" },
+
+    { "id": "node", "kicker": "Step 1", "title": "安装 Node.js", "sub": "Claude Code 的运行环境",
+      "detail": "<p>Claude Code 是用 <b>Node.js</b> 写的，得先把 Node 装上才能装它。装一次，以后不用再管。要求 <b>Node 18 或更高</b>。</p><span class='os win'>🪟 Windows</span><p>打开 <a href='https://nodejs.org/' target='_blank'>nodejs.org</a> → 下载 <b>LTS</b> 版的 <code>.msi</code> 安装包 → 双击，一路「下一步」装完。</p><span class='os mac'>🍎 macOS</span><p>同样去 <a href='https://nodejs.org/' target='_blank'>nodejs.org</a> 下 <b>LTS</b> 的 <code>.pkg</code> 双击安装；或者用 Homebrew 一行装：</p><pre><code>brew install node</code></pre><p><b>装完验证</b>（两个系统一样）：打开终端输入下面两行，能看到版本号就成功（第一个要 ≥ v18）：</p><pre><code>node -v\nnpm -v</code></pre><div class='tip'>终端在哪？Windows：开始菜单搜 <code>PowerShell</code> 打开；macOS：访达 → 应用程序 → 实用工具 → <b>终端</b>。</div><p class='warn'>⚠ Windows 若提示「不是内部命令」，重启电脑，或把 <code>C:\\Program Files\\nodejs\\</code> 加进系统环境变量 PATH。</p>" },
+
+    { "id": "mirror", "kicker": "Step 2", "title": "换淘宝镜像源", "sub": "下载提速，且不用翻墙",
+      "detail": "<p>npm（Node 的下载工具）默认从国外服务器拉包，国内又慢又容易卡。把下载源换成<b>阿里巴巴的国内镜像</b>（淘宝源），速度快很多，而且<b>这一步不需要翻墙</b>。</p><p>两个系统命令一样，终端里粘贴回车：</p><pre><code>npm config set registry https://registry.npmmirror.com</code></pre><p>验证换成功没（返回里有 npmmirror 就对了）：</p><pre><code>npm config get registry</code></pre><div class='tip'>这只是改下载地址，不影响别的。哪天想换回官方源：<code>npm config set registry https://registry.npmjs.org</code></div>" },
+
+    { "id": "install", "kicker": "Step 3", "title": "安装 Claude Code", "sub": "一行命令全局安装",
+      "detail": "<p>用 npm 把 Claude Code 装到电脑上。<code>-g</code> 表示<b>全局安装</b>（装一次，任何文件夹都能用）。两个系统命令一样：</p><pre><code>npm install -g @anthropic-ai/claude-code</code></pre><p>等它下载安装完成（换过淘宝源会快不少）。</p><span class='os mac'>🍎 macOS 注意</span><p class='warn'>⚠ <b>千万别在前面加 <code>sudo</code></b>！会带来权限和安全问题。万一报 <code>EACCES</code> 权限错误，照 <a href='https://code.claude.com/docs/en/setup' target='_blank'>官方文档</a>把 npm 全局目录改到自己的目录，别用 sudo 绕过。</p><div class='tip'>以后升级用：<code>npm install -g @anthropic-ai/claude-code@latest</code>（别用 <code>npm update -g</code>）。</div>" },
+
+    { "id": "verify1", "kicker": "Step 4", "title": "验证安装", "sub": "确认装好了",
+      "detail": "<p>检查一下到底装没装上。终端输入：</p><pre><code>claude --version</code></pre><p>能打印出一串版本号，就说明<b>安装成功</b>。再让它自检一下配置：</p><pre><code>claude doctor</code></pre><p class='warn'>⚠ 如果提示 <code>command not found</code> 或「不是内部命令」：多半是 PATH 还没生效。<b>先彻底关掉终端、重新打开</b>再试；还不行就重启电脑。</p>" },
+
+    { "id": "q_auth", "title": "用官方还是第三方？", "shape": "decision" },
+
+    { "id": "official", "kicker": "路线 A", "title": "官方直连", "sub": "国内不友好，了解即可", "variant": "muted",
+      "detail": "<p>这条是「用 Anthropic 官方账号直连」。对国内用户<b>不友好</b>，列出来让你知道为什么不推荐。</p><p>中国大陆不在 Anthropic 支持地区，而且它<b>每次请求都会校验你的 IP 归属地</b>（不只登录那一下）。所以你需要：</p><ul><li>一个<b>稳定的海外代理</b>，最好是住宅 IP——机房 IP / 共享 VPN 会被识别，照样报 unsupported region；</li><li>一个付费的 <b>Pro / Max / Console</b> 账号（免费版不含 Claude Code）。</li></ul><p>配好代理后，进项目目录执行 <code>claude</code>，按浏览器提示登录即可。</p><div class='tip'>不想每天开代理、嫌麻烦 → 走右边「第三方 · 智谱」，国内可直连，省心。</div>" },
+
+    { "id": "zhipu_key", "kicker": "路线 B · 智谱", "title": "注册智谱、拿 API Key", "sub": "开通 Coding Plan",
+      "detail": "<p>智谱（GLM）提供和 Claude <b>兼容</b>的接口，国内能直连，是最省心的方案。</p><p><b>三步拿到 Key：</b></p><ol><li>打开 <a href='https://www.bigmodel.cn/' target='_blank'>bigmodel.cn</a> 注册 / 登录（智谱开放平台）。</li><li>开通 <b>GLM Coding Plan</b>——这是专门给编程工具用的套餐，按套餐配额走，比按 token 计费划算。</li><li>在控制台的「API Key」页<b>复制你的 Key</b>，先存到记事本，下一步要粘。</li></ol><div class='tip'>官方配置说明：<a href='https://docs.bigmodel.cn/cn/coding-plan/quick-start' target='_blank'>GLM Coding Plan 快速开始 ↗</a></div><p class='warn'>⚠ API Key 等于密码：别发给别人、别截图上传、别提交到公开 GitHub 仓库。</p>" },
+
+    { "id": "zhipu_cfg", "kicker": "路线 B · 智谱", "title": "写配置文件 settings.json", "sub": "告诉 CC 连智谱",
+      "detail": "<p>现在告诉 Claude Code：「别连官方，连智谱」。做法是建/改一个配置文件 <code>settings.json</code>。</p><span class='os win'>🪟 Windows · 文件位置</span><p>（把 <code>你的用户名</code> 换成实际登录名；没有 <code>.claude</code> 文件夹就新建一个）：</p><pre><code>C:\\Users\\你的用户名\\.claude\\settings.json</code></pre><span class='os mac'>🍎 macOS · 文件位置</span><pre><code>~/.claude/settings.json</code></pre><p><b>两个系统文件内容一样</b>，把下面整段粘进去，再把 <code>&lt;你的智谱Key&gt;</code> 换成刚复制的 Key：</p><pre><code>{\n  \"env\": {\n    \"ANTHROPIC_BASE_URL\": \"https://open.bigmodel.cn/api/anthropic\",\n    \"ANTHROPIC_AUTH_TOKEN\": \"&lt;你的智谱Key&gt;\",\n    \"API_TIMEOUT_MS\": \"3000000\"\n  }\n}</code></pre><p><b>每行什么意思：</b></p><ul><li><code>ANTHROPIC_BASE_URL</code>：把请求发到智谱的服务器，而不是 Anthropic 官方。</li><li><code>ANTHROPIC_AUTH_TOKEN</code>：填你的 Key。<b class='warn'>注意是 AUTH_TOKEN，不是 API_KEY，别填错。</b></li><li><code>API_TIMEOUT_MS</code>：把超时调长，复杂任务不容易断。</li><li>模型不用填——智谱端点会默认用最新的 <b>GLM-5.2</b>。</li></ul>" },
+
+    { "id": "clean", "kicker": "Step 5", "title": "清理残留环境变量", "sub": "防止旧设置覆盖",
+      "detail": "<p>如果你电脑里以前设过 Anthropic 的环境变量，它会<b>盖过</b>刚写的配置文件，导致连不上。先清掉它们（没设过就直接跳过这步）。</p><span class='os win'>🪟 Windows（PowerShell）</span><pre><code>Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue\nRemove-Item Env:ANTHROPIC_BASE_URL -ErrorAction SilentlyContinue</code></pre><span class='os mac'>🍎 macOS</span><pre><code>unset ANTHROPIC_API_KEY\nunset ANTHROPIC_BASE_URL</code></pre><div class='tip'>原理：环境变量的优先级<b>高于</b> settings.json，残留的旧值会悄悄顶掉你的新配置，是新手最常见的「配了但连不上」原因。</div>" },
+
+    { "id": "launch", "kicker": "Step 6", "title": "启动并验证接入", "sub": "跑起来测一句",
+      "detail": "<p>一切就绪，跑起来。先在终端进到你的项目文件夹，再启动：</p><pre><code>cd 你的项目目录\nclaude</code></pre><p>进去后用斜杠命令检查接得对不对：</p><ul><li><code>/status</code>：看连接状态、当前接的是哪个服务地址。</li><li><code>/model</code>：看现在用的是哪个模型。</li></ul><p>随便发一句「你好，帮我看下这个项目」，能正常回复，就说明<b>接通了</b> 🎉</p><div class='tip'>Windows 第一次用，建议顺手装 <a href='https://git-scm.com/download/win' target='_blank'>Git for Windows</a>，Claude Code 调用 Bash 工具时更顺。</div>" },
+
+    { "id": "done", "kicker": "Done", "title": "完成 🎉", "sub": "开始用 Claude Code", "shape": "terminator", "variant": "gold",
+      "detail": "<p>装好了！现在可以让 Claude Code 帮你读代码、修 bug、加功能、跑命令。</p><p><b>进阶玩法：</b>把 skill 放进 <code>~/.claude/skills/</code> 给它扩展能力——比如这份攻略图就是用 <a href='https://github.com/xntj-ai/flowmaker' target='_blank'>flowmaker</a> 生成的。</p>" }
+  ],
+  "edges": [
+    { "source": "start", "target": "node" },
+    { "source": "node", "target": "mirror" },
+    { "source": "mirror", "target": "install" },
+    { "source": "install", "target": "verify1" },
+    { "source": "verify1", "target": "q_auth" },
+
+    { "source": "q_auth", "target": "official", "label": "官方直连", "dashed": true },
+    { "source": "q_auth", "target": "zhipu_key", "label": "第三方 · 智谱（推荐）" },
+
+    { "source": "official", "target": "launch", "label": "配好海外代理" },
+    { "source": "zhipu_key", "target": "zhipu_cfg" },
+    { "source": "zhipu_cfg", "target": "clean" },
+    { "source": "clean", "target": "launch" },
+    { "source": "launch", "target": "done" }
+  ]
+}

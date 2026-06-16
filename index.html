@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>flowmaker — 一句话生成可编辑的网页流程图</title>
+<style>
+  :root {
+    --bg: #f1f1f4;
+    --ink: #1d1f24;
+    --ink-dim: rgba(29, 31, 36, 0.58);
+    --ink-faint: rgba(29, 31, 36, 0.4);
+    --glass: rgba(255, 255, 255, 0.66);
+    --glass-strong: rgba(255, 255, 255, 0.88);
+    --line: rgba(20, 22, 28, 0.11);
+    --gold: #b8922f;
+    --gold-text: #8a6d1f;
+    --gold-soft: rgba(184, 146, 47, 0.13);
+    --blue: #3c64b4;
+    --code-bg: #1b1d22;
+    --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0; color: var(--ink); font-family: var(--font); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(1100px 640px at 50% -12%, rgba(184, 146, 47, 0.09), transparent 60%),
+      radial-gradient(900px 600px at 92% 8%, rgba(60, 100, 180, 0.07), transparent 55%),
+      var(--bg);
+  }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 28px; }
+
+  /* nav */
+  nav {
+    position: sticky; top: 0; z-index: 50; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    background: rgba(241, 241, 244, 0.72); border-bottom: 1px solid var(--line);
+  }
+  nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .logo { display: flex; align-items: center; gap: 9px; font-weight: 680; font-size: 16px; letter-spacing: 0.2px; }
+  .logo .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px rgba(184,146,47,0.6); }
+  .nav-links { display: flex; align-items: center; gap: 26px; font-size: 13.5px; color: var(--ink-dim); }
+  .nav-links a:hover { color: var(--ink); }
+  .pill {
+    padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+    background: var(--glass-strong); font-size: 13px; color: var(--ink); font-weight: 560;
+    transition: all 0.18s ease;
+  }
+  .pill:hover { background: #fff; border-color: rgba(20,22,28,0.22); }
+
+  /* hero */
+  header { padding: 88px 0 56px; text-align: center; }
+  .badge {
+    display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--gold-text);
+    background: var(--gold-soft); border: 1px solid rgba(184,146,47,0.28);
+    padding: 6px 14px; border-radius: 999px; margin-bottom: 26px; font-weight: 560;
+  }
+  h1.hero {
+    margin: 0; font-size: 58px; line-height: 1.08; font-weight: 720; letter-spacing: -1px;
+  }
+  h1.hero .accent {
+    background: linear-gradient(120deg, var(--gold), #d8b24a 60%, var(--blue));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { margin: 22px auto 0; max-width: 600px; font-size: 18px; color: var(--ink-dim); }
+  .cta { display: flex; gap: 13px; justify-content: center; margin-top: 34px; flex-wrap: wrap; }
+  .btn {
+    font-family: var(--font); font-size: 14.5px; font-weight: 580; padding: 12px 24px; border-radius: 12px;
+    cursor: pointer; border: 1px solid var(--line); transition: all 0.18s ease; display: inline-flex; align-items: center; gap: 8px;
+  }
+  .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 12px 28px rgba(20,22,40,0.25); }
+  .btn.ghost { background: var(--glass-strong); color: var(--ink); }
+  .btn.ghost:hover { background: #fff; transform: translateY(-2px); border-color: rgba(20,22,28,0.22); }
+  .techline { margin-top: 30px; font-size: 12.5px; color: var(--ink-faint); letter-spacing: 0.3px; }
+  .techline b { color: var(--ink-dim); font-weight: 600; }
+
+  /* live demo frame */
+  .demo-wrap { margin: 8px 0 20px; }
+  .browser {
+    border-radius: 16px; overflow: hidden; border: 1px solid var(--line);
+    background: var(--glass-strong); backdrop-filter: blur(20px);
+    box-shadow: 0 30px 70px rgba(20,22,40,0.16), 0 4px 14px rgba(20,22,40,0.08);
+  }
+  .browser-bar { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--line); }
+  .browser-bar .d { width: 11px; height: 11px; border-radius: 50%; }
+  .browser-bar .d.r { background: #e6655a; } .browser-bar .d.y { background: #e6b13e; } .browser-bar .d.g { background: #51b06a; }
+  .browser-bar .url { margin-left: 12px; font-size: 12px; color: var(--ink-faint); font-family: var(--mono); }
+  .browser iframe { display: block; width: 100%; height: 560px; border: 0; background: #f1f1f4; }
+  .demo-hint { text-align: center; font-size: 13px; color: var(--ink-faint); margin-top: 14px; }
+
+  /* sections */
+  section { padding: 56px 0; }
+  .eyebrow { font-size: 12.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--gold); font-weight: 680; }
+  h2 { font-size: 33px; font-weight: 700; letter-spacing: -0.5px; margin: 10px 0 0; }
+  .lead { font-size: 16px; color: var(--ink-dim); margin: 14px 0 0; max-width: 620px; }
+
+  .grid { display: grid; gap: 18px; margin-top: 38px; }
+  .grid.c4 { grid-template-columns: repeat(4, 1fr); }
+  .grid.c3 { grid-template-columns: repeat(3, 1fr); }
+  .grid.c2 { grid-template-columns: repeat(2, 1fr); }
+  .card {
+    background: var(--glass); border: 1px solid var(--line); border-radius: 16px; padding: 22px;
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 6px 22px rgba(20,22,40,0.07), inset 0 1px 0 rgba(255,255,255,0.7);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 14px 34px rgba(20,22,40,0.12); }
+  .card .ic { font-size: 22px; margin-bottom: 12px; display: block; }
+  .card h3 { margin: 0 0 7px; font-size: 16.5px; font-weight: 660; }
+  .card p { margin: 0; font-size: 13.5px; color: var(--ink-dim); line-height: 1.55; }
+
+  /* pipeline */
+  .pipe { display: flex; align-items: stretch; gap: 0; margin-top: 40px; flex-wrap: wrap; }
+  .step {
+    flex: 1; min-width: 150px; background: var(--glass); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 16px; text-align: center; position: relative;
+    box-shadow: 0 6px 20px rgba(20,22,40,0.06);
+  }
+  .step .n { font-size: 11px; font-weight: 700; color: var(--gold); letter-spacing: 1px; }
+  .step h4 { margin: 8px 0 5px; font-size: 14.5px; font-weight: 640; }
+  .step p { margin: 0; font-size: 12px; color: var(--ink-dim); line-height: 1.45; }
+  .arrow { display: flex; align-items: center; color: var(--ink-faint); font-size: 20px; padding: 0 7px; }
+
+  .stack { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+  .tag {
+    font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); background: var(--glass-strong);
+    border: 1px solid var(--line); padding: 7px 13px; border-radius: 9px;
+  }
+  .tag b { color: var(--gold-text); }
+
+  /* feature list */
+  .feat { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 34px; margin-top: 36px; }
+  .feat .row { display: flex; gap: 13px; align-items: flex-start; }
+  .feat .ck { flex: none; width: 22px; height: 22px; border-radius: 7px; background: var(--gold-soft); color: var(--gold-text); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; margin-top: 1px; }
+  .feat .row b { font-weight: 640; font-size: 14.5px; }
+  .feat .row span { display: block; font-size: 13px; color: var(--ink-dim); margin-top: 2px; }
+
+  /* code */
+  .code {
+    background: var(--code-bg); border-radius: 14px; padding: 20px 22px; margin-top: 22px; overflow-x: auto;
+    box-shadow: 0 14px 34px rgba(20,22,40,0.18);
+  }
+  .code pre { margin: 0; font-family: var(--mono); font-size: 12.8px; line-height: 1.7; color: #d6d8de; }
+  .code .c-key { color: #8fb6ff; } .code .c-str { color: #c3e88d; } .code .c-com { color: #6b7280; } .code .c-pun { color: #9aa0ab; }
+  .usage-two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 8px; }
+  .usage-two h3 { font-size: 15px; font-weight: 640; margin: 24px 0 0; }
+
+  /* footer */
+  footer { padding: 50px 0 60px; border-top: 1px solid var(--line); margin-top: 30px; text-align: center; color: var(--ink-faint); font-size: 13px; }
+  footer a { color: var(--ink-dim); font-weight: 560; }
+  footer a:hover { color: var(--ink); }
+  footer .made { margin-top: 10px; font-size: 12px; }
+
+  @media (max-width: 860px) {
+    h1.hero { font-size: 40px; }
+    .grid.c4, .grid.c3 { grid-template-columns: repeat(2, 1fr); }
+    .feat, .usage-two { grid-template-columns: 1fr; }
+    .pipe { flex-direction: column; } .arrow { transform: rotate(90deg); padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav><div class="wrap">
+  <div class="logo"><span class="dot"></span>flowmaker</div>
+  <div class="nav-links">
+    <a href="#demo">示例</a>
+    <a href="#how">原理</a>
+    <a href="#features">能力</a>
+    <a href="#usage">用法</a>
+    <a class="pill" href="https://github.com/xntj-ai/flowmaker" target="_blank">GitHub ↗</a>
+  </div>
+</div></nav>
+
+<header><div class="wrap">
+  <div class="badge">◆ Claude Code / Agent Skill · MIT 开源</div>
+  <h1 class="hero">一句话，生成<br><span class="accent">可编辑的网页流程图</span></h1>
+  <p class="sub">描述一段流程 → 得到一个<b>单 HTML 文件</b>：浅色玻璃风、判断菱形、可拖拽编辑、一键导出 PNG。零后端，双击即开。</p>
+  <div class="cta">
+    <a class="btn primary" href="#demo">▶ 看交互示例</a>
+    <a class="btn ghost" href="https://github.com/xntj-ai/flowmaker" target="_blank">在 GitHub 查看</a>
+  </div>
+  <div class="techline">底层 <b>React Flow</b> · <b>dagre</b> 自动布局 · <b>html-to-image</b> 导出 · 全部经 esm.sh 在浏览器加载，<b>无需构建</b></div>
+</div></header>
+
+<section id="demo" style="padding-top:14px"><div class="wrap">
+  <div class="demo-wrap"><div class="browser">
+    <div class="browser-bar">
+      <span class="d r"></span><span class="d y"></span><span class="d g"></span>
+      <span class="url">flowchart.html — 单文件 · 无后端</span>
+    </div>
+    <iframe src="examples/worldcup.html" title="flowmaker 交互示例" loading="lazy"></iframe>
+  </div></div>
+  <p class="demo-hint">↑ 这是真实产物，不是截图。拖动节点 · 拖圆点连线 · 双击节点改名 · 单击连线改字 · 右上角导出 PNG</p>
+</div></section>
+
+<section id="value"><div class="wrap">
+  <div class="eyebrow">为什么需要它</div>
+  <h2>做流程图的工具很多，<br>但同时满足这四条的几乎没有</h2>
+  <p class="lead">在线产品出图好看却锁在平台里；Mermaid 渲染干净却只能改文本不能拖；专业库要么收费要么得自己搭工程。flowmaker 把"好看 / 可改 / 单文件 / 零后端"凑齐在一个产物里。</p>
+  <div class="grid c4">
+    <div class="card"><span class="ic">📄</span><h3>单 HTML，零后端</h3><p>一个文件，双击用浏览器打开就跑。没有服务器、没有构建、没有依赖安装。</p></div>
+    <div class="card"><span class="ic">✋</span><h3>浏览器里可编辑</h3><p>拖节点、拖圆点连线、双击改名、面板增删。交给别人也能继续改，不是死图。</p></div>
+    <div class="card"><span class="ic">◇</span><h3>标准流程图形状</h3><p>处理矩形、起止圆角条、判断菱形——分支逻辑一眼能读，不是堆方块。</p></div>
+    <div class="card"><span class="ic">🖼️</span><h3>一键导出 PNG</h3><p>整张图按 2× 清晰度完整截出，含画布外没滚到的部分，直接进文档/PPT。</p></div>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <div class="eyebrow">实现原理</div>
+  <h2>AI 只写数据，引擎负责好看</h2>
+  <p class="lead">flowmaker 把"引擎"和"内容"彻底分开：模板里封好渲染与交互，AI 只需产出 nodes/edges 的 JSON，省略坐标就交给 dagre 自动排版。改一段描述、换一个 JSON，图就变了。</p>
+
+  <div class="pipe">
+    <div class="step"><div class="n">01</div><h4>描述流程</h4><p>一句话或几句话讲清步骤与分支</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">02</div><h4>LLM 出 JSON</h4><p>拆成 nodes / edges 结构化数据</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">03</div><h4>注入模板</h4><p>替换 HTML 里的数据岛</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">04</div><h4>dagre 布局</h4><p>自动算坐标，省去手工排版</p></div>
+    <div class="arrow">→</div>
+    <div class="step"><div class="n">05</div><h4>渲染可编辑图</h4><p>React Flow 出图，可拖可导出</p></div>
+  </div>
+
+  <div class="stack">
+    <span class="tag"><b>React Flow 12</b> 节点/边/交互</span>
+    <span class="tag"><b>dagre</b> 有向图自动布局</span>
+    <span class="tag"><b>html-to-image</b> PNG 导出</span>
+    <span class="tag"><b>htm</b> 无构建 JSX</span>
+    <span class="tag"><b>esm.sh</b> CDN 加载，零打包</span>
+  </div>
+</div></section>
+
+<section id="craft"><div class="wrap">
+  <div class="eyebrow">打磨细节</div>
+  <h2>"好看"是抠出来的</h2>
+  <div class="grid c3">
+    <div class="card"><h3>判断菱形用 SVG 多边形</h3><p>扁菱形的锐角用 CSS clip-path 描边会糊成灰三角；改用 SVG polygon，描边在任何角度都均匀。</p></div>
+    <div class="card"><h3>节点统一宽度才出直线</h3><p>宽度不一致时中心对不齐，连线会拐 Z。统一固定宽 + 主干对齐同一轴，竖线才真直。</p></div>
+    <div class="card"><h3>导出走内联上色 + 扁平模式</h3><p>html-to-image 不渲染 CSS 定义的 SVG 填充；颜色全改内联，导出时临时关阴影/毛玻璃，出图干净。</p></div>
+  </div>
+</div></section>
+
+<section id="features"><div class="wrap">
+  <div class="eyebrow">能力清单</div>
+  <h2>产物自带，无需任何额外代码</h2>
+  <div class="feat">
+    <div class="row"><span class="ck">✓</span><div><b>拖拽布局</b><span>节点自由拖动，所见即所得</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>连线编辑</b><span>拖圆点建线，单击改线上文字</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>节点面板</b><span>改标题/子标题/形状/配色</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>增删自如</b><span>＋加节点，面板或 Delete 删除</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>自动布局</b><span>省略坐标即 dagre 排版，支持 TB/LR</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>PNG 导出</b><span>整图 2× 清晰度，一键下载</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>三形状 + 四配色</b><span>矩形/圆角条/菱形 × 普通/蓝/金/灰</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>浅色玻璃美学</b><span>克制灰阶 + 金蓝点缀，ppvi 风格</span></div></div>
+  </div>
+</div></section>
+
+<section id="usage"><div class="wrap">
+  <div class="eyebrow">怎么用</div>
+  <h2>两种用法</h2>
+  <div class="usage-two">
+    <div>
+      <h3>① 作为 Claude Code skill</h3>
+      <div class="code"><pre><span class="c-com"># 克隆到技能目录</span>
+git clone https://github.com/xntj-ai/<span class="c-str">flowmaker</span> \
+  ~/.claude/skills/flowmaker
+
+<span class="c-com"># 然后直接对 Claude 说：</span>
+<span class="c-str">"用 flowmaker 把这个审核流程</span>
+<span class="c-str"> 画成可编辑的网页流程图"</span></pre></div>
+    </div>
+    <div>
+      <h3>② 直接改模板的数据岛</h3>
+      <div class="code"><pre>{
+  <span class="c-key">"title"</span>: <span class="c-str">"审核流程"</span>,
+  <span class="c-key">"nodes"</span>: [
+    { <span class="c-key">"id"</span>:<span class="c-str">"a"</span>, <span class="c-key">"title"</span>:<span class="c-str">"提交"</span>, <span class="c-key">"shape"</span>:<span class="c-str">"terminator"</span> },
+    { <span class="c-key">"id"</span>:<span class="c-str">"b"</span>, <span class="c-key">"title"</span>:<span class="c-str">"通过？"</span>, <span class="c-key">"shape"</span>:<span class="c-str">"decision"</span> },
+    { <span class="c-key">"id"</span>:<span class="c-str">"c"</span>, <span class="c-key">"title"</span>:<span class="c-str">"归档"</span>, <span class="c-key">"variant"</span>:<span class="c-str">"gold"</span> }
+  ],
+  <span class="c-key">"edges"</span>: [
+    { <span class="c-key">"source"</span>:<span class="c-str">"a"</span>, <span class="c-key">"target"</span>:<span class="c-str">"b"</span> },
+    { <span class="c-key">"source"</span>:<span class="c-str">"b"</span>, <span class="c-key">"target"</span>:<span class="c-str">"c"</span>, <span class="c-key">"label"</span>:<span class="c-str">"是"</span> }
+  ]
+}</pre></div>
+    </div>
+  </div>
+</div></section>
+
+<footer><div class="wrap">
+  <div><a href="https://github.com/xntj-ai/flowmaker" target="_blank">github.com/xntj-ai/flowmaker</a> · MIT License</div>
+  <div class="made">本页面也是浅色 ppvi 风格 —— 和 flowmaker 的产物同一套设计语言</div>
+</div></footer>
+
+</body>
+</html>

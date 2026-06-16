@@ -20,6 +20,7 @@
     --blue: rgba(60, 100, 180, 0.9);
     --danger: #b4322f;
     --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", "Cascadia Code", Consolas, monospace;
   }
   * { box-sizing: border-box; }
   html, body, #app { height: 100%; margin: 0; }
@@ -68,6 +69,14 @@
   .gnode .gn-kicker { font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 5px; font-weight: 650; }
   .gnode .gn-title { font-size: 14.5px; font-weight: 660; line-height: 1.35; }
   .gnode .gn-sub { font-size: 12px; color: var(--ink-dim); margin-top: 5px; line-height: 1.45; }
+  .gn-detail {
+    margin-top: 10px; font-family: var(--font); font-size: 11px; color: var(--blue); font-weight: 560;
+    background: rgba(60,100,180,0.08); border: 1px solid rgba(60,100,180,0.22);
+    padding: 3px 10px; border-radius: 7px; cursor: pointer; transition: all 0.15s ease;
+  }
+  .gn-detail:hover { background: rgba(60,100,180,0.16); }
+  .diamond-content .gn-detail { display: none; }
+  .react-flow.exporting .gn-detail { display: none; }
 
   .gnode.gold {
     background: linear-gradient(158deg, var(--gold-soft), rgba(255,255,255,0.85));
@@ -81,8 +90,8 @@
   .gnode.start { border-color: rgba(60, 100, 180, 0.42); }
   .gnode.start .gn-kicker { color: var(--blue); }
 
-  /* 形状：起止（圆角条） */
-  .gnode.terminator { border-radius: 999px; padding: 14px 26px; }
+  /* 形状：起止（大圆角卡片，不用 999px 以免内容多时胀成气球） */
+  .gnode.terminator { border-radius: 28px; padding: 13px 20px; }
 
   /* 形状：判断（扁菱形，SVG 多边形） */
   .gnode-wrap.decision { width: 168px; height: 70px; position: relative; display: flex; align-items: center; justify-content: center; }
@@ -132,6 +141,35 @@
   .ep-t { resize: vertical; line-height: 1.45; }
   .ep-actions { display: flex; gap: 8px; margin-top: 15px; }
   .ep-actions .btn { flex: 1; }
+
+  /* 详情浮层模态 */
+  .detail-backdrop {
+    position: fixed; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; padding: 24px;
+    background: rgba(20,22,28,0.28); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px);
+  }
+  .detail-card {
+    width: min(520px, 92vw); max-height: 80vh; overflow: auto;
+    background: var(--glass-strong); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--line); border-radius: 18px; padding: 22px 24px;
+    box-shadow: 0 30px 80px rgba(20,22,40,0.28);
+  }
+  .dc-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+  .dc-kicker { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); font-weight: 680; }
+  .dc-title { font-size: 18px; font-weight: 680; margin-top: 3px; line-height: 1.3; }
+  .dc-body { font-size: 13.5px; line-height: 1.72; color: var(--ink); word-break: break-word; }
+  .dc-body p { margin: 0 0 11px; }
+  .dc-body a { color: var(--blue); text-decoration: underline; text-underline-offset: 2px; font-weight: 560; }
+  .dc-body a:hover { color: #294e9c; }
+  .dc-body code { font-family: var(--mono); font-size: 12.3px; background: rgba(20,22,28,0.06); border: 1px solid var(--line); border-radius: 5px; padding: 1px 5px; word-break: break-all; }
+  .dc-body pre { background: #1b1d22; color: #d6d8de; font-family: var(--mono); font-size: 12.3px; line-height: 1.62; padding: 12px 14px; border-radius: 10px; overflow-x: auto; margin: 8px 0 12px; white-space: pre-wrap; word-break: break-word; }
+  .dc-body pre code { background: none; border: none; padding: 0; color: inherit; }
+  .dc-body .os { display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 6px; margin: 14px 0 6px; }
+  .dc-body .os.win { background: rgba(60,100,180,0.12); color: #294e9c; }
+  .dc-body .os.mac { background: rgba(20,22,28,0.08); color: var(--ink); }
+  .dc-body ul, .dc-body ol { margin: 6px 0 11px; padding-left: 20px; }
+  .dc-body li { margin: 3px 0; }
+  .dc-body .warn { color: #b4322f; font-weight: 560; }
+  .dc-body .tip { background: var(--gold-soft); border-left: 3px solid var(--gold); padding: 8px 12px; border-radius: 0 8px 8px 0; margin: 8px 0 12px; font-size: 13px; }
 </style>
 <script type="importmap">
 {
@@ -157,7 +195,7 @@
   "direction": "TB",
   "nodes": [
     { "id": "a", "title": "开始", "kicker": "Start", "shape": "terminator", "variant": "start" },
-    { "id": "b", "title": "处理步骤", "sub": "在这里写说明" },
+    { "id": "b", "title": "处理步骤", "sub": "节点只写概述", "detail": "<p>详细内容放这里，<b>支持 HTML</b>：可点链接、代码块、分区。</p><p>点节点上的「详情 ▾」就弹出这个浮层，长内容不会撑乱画布。</p><span class='os win'>🪟 Windows</span><pre><code>echo 命令进代码块</code></pre><p>链接示例：<a href='https://code.claude.com/docs' target='_blank'>官方文档 ↗</a></p>" },
     { "id": "c", "title": "判断条件？", "shape": "decision" },
     { "id": "d", "title": "是 → 继续" },
     { "id": "e", "title": "否 → 退出", "variant": "muted" },
@@ -174,7 +212,7 @@
 </script>
 
 <script type="module">
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import {
   ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position,
@@ -190,13 +228,18 @@ const DATA = JSON.parse(document.getElementById("flow-data").textContent);
 const ARROW = { type: MarkerType.ArrowClosed, color: "rgba(20,22,28,0.42)" };
 
 /* ---------- 自定义节点 ---------- */
-function GlassNode({ data }) {
+function GlassNode({ id, data }) {
   const v = data.variant ? " " + data.variant : "";
   const shape = data.shape || "process";
+  const openDetail = (e) => {
+    e.stopPropagation();
+    window.dispatchEvent(new CustomEvent("flow-detail", { detail: id }));
+  };
   const content = html`
     ${data.kicker ? html`<div class="gn-kicker">${data.kicker}</div>` : null}
     <div class="gn-title">${data.title}</div>
-    ${data.sub ? html`<div class="gn-sub">${data.sub}</div>` : null}`;
+    ${data.sub ? html`<div class="gn-sub">${data.sub}</div>` : null}
+    ${data.detail ? html`<button class="gn-detail" onMouseDown=${(e) => e.stopPropagation()} onClick=${openDetail}>详情 ▾</button>` : null}`;
   const handles = html`
     <${React.Fragment}>
       <${Handle} type="target" position=${Position.Top} id="t" />
@@ -239,7 +282,7 @@ function buildNodes() {
     return {
       id: d.id, type: "glass",
       position: { x: d.x ?? 0, y: d.y ?? 0 },
-      data: { title: d.title, sub: d.sub || "", kicker: d.kicker || "", shape: d.shape || "process", variant: d.variant || "" },
+      data: { title: d.title, sub: d.sub || "", kicker: d.kicker || "", detail: d.detail || "", shape: d.shape || "process", variant: d.variant || "" },
       _w: w, _h: h, _placed: d.x !== undefined && d.y !== undefined,
     };
   });
@@ -286,8 +329,10 @@ function NodePanel({ node, onField, onDelete, onClose }) {
       <input class="ep-i" value=${d.kicker || ""} onChange=${(e) => onField("kicker", e.target.value)} />
       <label class="ep-l">主标题</label>
       <input class="ep-i" value=${d.title || ""} onChange=${(e) => onField("title", e.target.value)} />
-      <label class="ep-l">子标题</label>
-      <textarea class="ep-t" rows="3" value=${d.sub || ""} onChange=${(e) => onField("sub", e.target.value)}></textarea>
+      <label class="ep-l">子标题（节点上显示的概述）</label>
+      <textarea class="ep-t" rows="2" value=${d.sub || ""} onChange=${(e) => onField("sub", e.target.value)}></textarea>
+      <label class="ep-l">详情（点「详情 ▾」展开层）</label>
+      <textarea class="ep-t" rows="4" value=${d.detail || ""} onChange=${(e) => onField("detail", e.target.value)}></textarea>
       <label class="ep-l">形状</label>
       <select class="ep-i" value=${d.shape || "process"} onChange=${(e) => onField("shape", e.target.value)}>
         <option value="process">处理（矩形）</option>
@@ -323,6 +368,24 @@ function EdgePanel({ edge, onLabel, onDelete, onClose }) {
     </div>`;
 }
 
+function DetailModal({ node, onClose }) {
+  if (!node) return null;
+  const d = node.data;
+  return html`
+    <div class="detail-backdrop" onClick=${onClose}>
+      <div class="detail-card" onClick=${(e) => e.stopPropagation()}>
+        <div class="dc-head">
+          <div>
+            ${d.kicker ? html`<span class="dc-kicker">${d.kicker}</span>` : null}
+            <div class="dc-title">${d.title}</div>
+          </div>
+          <button class="ep-x" onClick=${onClose}>✕</button>
+        </div>
+        <div class="dc-body" dangerouslySetInnerHTML=${{ __html: d.detail }}></div>
+      </div>
+    </div>`;
+}
+
 /* ---------- App ---------- */
 let eseq = 1;
 const INIT_EDGES = buildEdges();
@@ -333,7 +396,14 @@ function Flow() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(INIT_EDGES);
   const [editId, setEditId] = useState(null);
   const [editEdgeId, setEditEdgeId] = useState(null);
+  const [detailId, setDetailId] = useState(null);
   const { getNodes } = useReactFlow();
+
+  useEffect(() => {
+    const h = (e) => setDetailId(e.detail);
+    window.addEventListener("flow-detail", h);
+    return () => window.removeEventListener("flow-detail", h);
+  }, []);
 
   const onExport = useCallback(() => {
     const vpEl = document.querySelector(".react-flow__viewport");
@@ -357,6 +427,7 @@ function Flow() {
 
   const editNode = nodes.find((n) => n.id === editId) || null;
   const editEdge = edges.find((e) => e.id === editEdgeId) || null;
+  const detailNode = nodes.find((n) => n.id === detailId) || null;
 
   const onConnect = useCallback((params) => {
     const id = "ne_" + (eseq++);
@@ -390,7 +461,7 @@ function Flow() {
   const addNode = useCallback(() => {
     const id = "n_" + (eseq++);
     setNodes((nds) => nds.concat({ id, type: "glass", position: { x: 80 + (eseq % 4) * 40, y: 80 + eseq * 24 },
-      data: { title: "新节点", sub: "双击改名 · 拖圆点连线", kicker: "", shape: "process", variant: "" } }));
+      data: { title: "新节点", sub: "双击改名 · 拖圆点连线", kicker: "", detail: "", shape: "process", variant: "" } }));
     setEditEdgeId(null); setEditId(id);
   }, [setNodes]);
 
@@ -409,6 +480,7 @@ function Flow() {
 
       <${NodePanel} node=${editNode} onField=${onField} onDelete=${deleteNode} onClose=${() => setEditId(null)} />
       <${EdgePanel} edge=${editEdge} onLabel=${onEdgeLabel} onDelete=${deleteEdge} onClose=${() => setEditEdgeId(null)} />
+      <${DetailModal} node=${detailNode} onClose=${() => setDetailId(null)} />
 
       <${ReactFlow}
         nodes=${nodes} edges=${edges} nodeTypes=${nodeTypes}
