@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2026 世界杯 · 赛事流程图</title>
+<link rel="stylesheet" href="https://esm.sh/@xyflow/react@12/dist/style.css" />
+<style>
+  :root {
+    --bg: #f1f1f4;
+    --ink: #1d1f24;
+    --ink-dim: rgba(29, 31, 36, 0.56);
+    --ink-faint: rgba(29, 31, 36, 0.38);
+    --glass: rgba(255, 255, 255, 0.66);
+    --glass-strong: rgba(255, 255, 255, 0.86);
+    --line: rgba(20, 22, 28, 0.11);
+    --gold: #b8922f;
+    --gold-text: #8a6d1f;
+    --gold-soft: rgba(184, 146, 47, 0.14);
+    --blue: rgba(60, 100, 180, 0.9);
+    --danger: #b4322f;
+    --font: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body, #app { height: 100%; margin: 0; }
+  body {
+    background:
+      radial-gradient(1200px 720px at 50% -10%, rgba(184, 146, 47, 0.08), transparent 60%),
+      radial-gradient(900px 620px at 88% 112%, rgba(60, 100, 180, 0.07), transparent 60%),
+      var(--bg);
+    color: var(--ink);
+    font-family: var(--font);
+    -webkit-font-smoothing: antialiased;
+  }
+  .react-flow { width: 100%; height: 100%; }
+
+  /* ---------- 顶栏 ---------- */
+  .topbar {
+    position: absolute; z-index: 10; top: 18px; left: 22px; right: 22px;
+    display: flex; align-items: flex-start; justify-content: space-between; pointer-events: none;
+  }
+  .brand { pointer-events: auto; }
+  .brand h1 {
+    margin: 0; font-size: 17.5px; font-weight: 660; letter-spacing: 0.3px;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 10px rgba(184,146,47,0.6); }
+  .brand p { margin: 6px 0 0 17px; font-size: 12.5px; color: var(--ink-dim); letter-spacing: 0.2px; }
+  .actions { pointer-events: auto; display: flex; gap: 10px; }
+
+  .btn {
+    font-family: var(--font); font-size: 12.5px; color: var(--ink);
+    background: var(--glass-strong); border: 1px solid var(--line);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    padding: 9px 15px; border-radius: 10px; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    box-shadow: 0 3px 10px rgba(20,22,40,0.06); transition: all 0.18s ease;
+  }
+  .btn:hover { background: #fff; border-color: rgba(20,22,28,0.2); transform: translateY(-1px); }
+  .btn.danger { color: var(--danger); border-color: rgba(180,50,47,0.3); background: rgba(180,50,47,0.06); box-shadow: none; }
+  .btn.danger:hover { background: rgba(180,50,47,0.12); }
+
+  /* ---------- 玻璃节点 ---------- */
+  .gnode {
+    position: relative; width: 188px;
+    background: var(--glass); border: 1px solid var(--line);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-radius: 14px; padding: 13px 16px;
+    box-shadow: 0 6px 22px rgba(20,22,40,0.09), inset 0 1px 0 rgba(255,255,255,0.7);
+    transition: border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .gnode:hover { transform: translateY(-1px); box-shadow: 0 10px 28px rgba(20,22,40,0.13); }
+  .react-flow__node.selected .gnode { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(184,146,47,0.3), 0 10px 28px rgba(20,22,40,0.14); }
+  .gnode .gn-kicker {
+    font-size: 10.5px; letter-spacing: 1.4px; text-transform: uppercase;
+    color: var(--ink-faint); margin-bottom: 5px; font-weight: 650;
+  }
+  .gnode .gn-title { font-size: 14.5px; font-weight: 660; line-height: 1.35; }
+  .gnode .gn-sub { font-size: 12px; color: var(--ink-dim); margin-top: 5px; line-height: 1.45; }
+
+  .gnode.champ {
+    background: linear-gradient(158deg, var(--gold-soft), rgba(255,255,255,0.85));
+    border-color: rgba(184, 146, 47, 0.6);
+    box-shadow: 0 8px 26px rgba(184,146,47,0.18), inset 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .gnode.champ .gn-title { color: var(--gold-text); }
+  .gnode.champ .gn-kicker { color: var(--gold); }
+
+  .gnode.out {
+    background: rgba(20,22,28,0.025); border: 1px dashed rgba(20,22,28,0.18);
+    box-shadow: none; opacity: 0.78;
+  }
+  .gnode.out .gn-title { color: var(--ink-dim); font-weight: 580; }
+
+  .gnode.start { border-color: rgba(60, 100, 180, 0.42); }
+  .gnode.start .gn-kicker { color: var(--blue); }
+
+  /* 形状：起止（圆角条） */
+  .gnode.terminator { border-radius: 999px; padding: 14px 26px; }
+
+  /* 形状：判断（扁菱形，SVG 多边形 · 宽 > 高） */
+  .gnode-wrap.decision {
+    width: 168px; height: 70px; position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .diamond-svg {
+    position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible;
+    filter: drop-shadow(0 5px 12px rgba(20,22,40,0.11)); transition: filter 0.18s ease;
+  }
+  .gnode-wrap.decision:hover .diamond-svg { filter: drop-shadow(0 9px 18px rgba(20,22,40,0.16)); }
+  .diamond-svg polygon {
+    fill: rgba(255, 255, 255, 0.92); stroke: rgba(20, 22, 28, 0.2);
+    stroke-width: 1.4; stroke-linejoin: round; transition: stroke 0.18s ease;
+  }
+  .react-flow__node.selected .diamond-svg polygon { stroke: var(--gold); stroke-width: 2; }
+  .diamond-content { position: relative; z-index: 1; text-align: center; max-width: 102px; }
+  .diamond-content .gn-kicker, .diamond-content .gn-sub { display: none; }
+  .diamond-content .gn-title {
+    font-size: 12.5px; font-weight: 500; color: var(--ink-dim);
+    letter-spacing: 0; line-height: 1.4;
+  }
+  .diamond-svg.start polygon { stroke: rgba(60, 100, 180, 0.55); }
+  .diamond-svg.champ polygon { fill: #fbf4dd; stroke: rgba(184, 146, 47, 0.7); }
+  .diamond-svg.out polygon { fill: #f4f4f6; stroke: rgba(20, 22, 28, 0.24); stroke-dasharray: 5 4; }
+
+  /* ---------- handle ---------- */
+  .react-flow__handle { width: 8px; height: 8px; background: rgba(20,22,28,0.42); border: 1px solid #fff; }
+  .react-flow__handle:hover { background: var(--gold); }
+
+  /* ---------- 边 / 标签 ---------- */
+  .react-flow__edge-path { stroke: rgba(20,22,28,0.22); stroke-width: 1.5; }
+  .react-flow__edge.animated .react-flow__edge-path { stroke: rgba(20,22,28,0.42); }
+  .react-flow__edge-text { fill: var(--ink); font-size: 11px; font-family: var(--font); }
+  .react-flow__edge-textbg { fill: #ffffff; }
+
+  /* ---------- 控件 / 小地图 ---------- */
+  .react-flow__controls { box-shadow: 0 6px 18px rgba(20,22,40,0.12); border-radius: 10px; overflow: hidden; }
+  .react-flow__controls-button { background: #fff; border-bottom: 1px solid rgba(20,22,28,0.07); color: var(--ink); }
+  .react-flow__controls-button:hover { background: #f3f3f5; }
+  .react-flow__controls-button svg { fill: var(--ink-dim); }
+  .react-flow__minimap { border-radius: 10px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 6px 18px rgba(20,22,40,0.1); }
+  .react-flow__attribution { background: transparent; color: var(--ink-faint); font-size: 10px; }
+  .react-flow__attribution a { color: var(--ink-faint); }
+
+  /* ---------- 编辑面板 ---------- */
+  .editpanel {
+    position: absolute; z-index: 20; top: 78px; right: 22px; width: 266px;
+    background: var(--glass-strong); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--line); border-radius: 16px; padding: 16px 16px 14px;
+    box-shadow: 0 16px 44px rgba(20,22,40,0.18);
+  }
+  .ep-head { display: flex; justify-content: space-between; align-items: center; font-size: 13.5px; font-weight: 660; }
+  .ep-x { border: none; background: transparent; cursor: pointer; font-size: 14px; color: var(--ink-dim); padding: 2px 4px; }
+  .ep-x:hover { color: var(--ink); }
+  .ep-l { display: block; font-size: 11px; letter-spacing: 0.5px; color: var(--ink-faint); margin: 11px 0 5px; font-weight: 650; }
+  .ep-i, .ep-t {
+    width: 100%; font-family: var(--font); font-size: 13px; color: var(--ink);
+    background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 8px 10px; outline: none;
+  }
+  .ep-i:focus, .ep-t:focus { border-color: rgba(184,146,47,0.6); }
+  .ep-t { resize: vertical; line-height: 1.45; }
+  .ep-actions { display: flex; gap: 8px; margin-top: 15px; }
+  .ep-actions .btn { flex: 1; }
+</style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1",
+    "@xyflow/react": "https://esm.sh/@xyflow/react@12?deps=react@18.3.1,react-dom@18.3.1",
+    "htm": "https://esm.sh/htm@3.1.1"
+  }
+}
+</script>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+import React, { useCallback, useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  ReactFlow, Background, Controls, MiniMap, Handle, Position,
+  addEdge, useNodesState, useEdgesState, MarkerType
+} from "@xyflow/react";
+import htm from "htm";
+
+const html = htm.bind(React.createElement);
+
+/* ---------- 自定义玻璃节点 ---------- */
+function GlassNode({ data }) {
+  const v = data.variant ? " " + data.variant : "";
+  const shape = data.shape || "process";
+  const content = html`
+    ${data.kicker ? html`<div class="gn-kicker">${data.kicker}</div>` : null}
+    <div class="gn-title">${data.title}</div>
+    ${data.sub ? html`<div class="gn-sub">${data.sub}</div>` : null}`;
+  const handles = html`
+    <${React.Fragment}>
+      <${Handle} type="target" position=${Position.Top} id="t" />
+      <${Handle} type="target" position=${Position.Left} id="tl" />
+      <${Handle} type="source" position=${Position.Bottom} id="b" />
+      <${Handle} type="source" position=${Position.Right} id="r" />
+    <//>`;
+
+  if (shape === "decision") {
+    return html`
+      <div class="gnode-wrap decision">
+        ${handles}
+        <svg class=${"diamond-svg" + v} viewBox="0 0 168 70" preserveAspectRatio="none">
+          <polygon points="84,3 165,35 84,67 3,35" />
+        </svg>
+        <div class="diamond-content">${content}</div>
+      </div>`;
+  }
+  return html`
+    <div class=${"gnode " + shape + v}>
+      ${handles}
+      ${content}
+    </div>`;
+}
+const nodeTypes = { glass: GlassNode };
+
+/* ---------- 数据：2026 世界杯赛制（48 队） ---------- */
+const N = (id, x, y, data) => ({ id, type: "glass", position: { x, y }, data });
+
+const initialNodes = [
+  N("qual",  356,   0, { kicker: "Start", title: "各大洲预选赛", sub: "六大洲资格赛产生 48 强", variant: "start", shape: "terminator" }),
+  N("draw",  356, 110, { kicker: "Stage 01", title: "抽签分组", sub: "48 队 → 12 组，每组 4 队" }),
+  N("group", 356, 240, { kicker: "Stage 02", title: "小组赛", sub: "组内单循环，定排名" }),
+  N("rank",  366, 376, { kicker: "判断", title: "小组排名？", shape: "decision" }),
+
+  N("top2",  108, 536, { kicker: "前 2 名", title: "每组前 2 名", sub: "24 队直接晋级" }),
+  N("third", 356, 536, { kicker: "第 3 名", title: "最佳第三名", sub: "8 个成绩最好的第三名" }),
+  N("elim",  660, 520, { kicker: "Out", title: "其余球队出局", sub: "剩余第三名 + 全部第四名", variant: "out" }),
+
+  N("r32",   356, 686, { kicker: "Knockout", title: "32 强淘汰赛", sub: "单场淘汰 · Round of 32" }),
+  N("r16",   356, 814, { kicker: "Knockout", title: "16 强", sub: "Round of 16" }),
+  N("qf",    356, 942, { kicker: "Knockout", title: "1/4 决赛", sub: "八强争四强" }),
+  N("sf",    366,1078, { kicker: "判断", title: "半决赛胜负？", shape: "decision" }),
+
+  N("third_place", 660,1248, { kicker: "排位", title: "三四名决赛", sub: "负者 → 决出季军", variant: "out" }),
+  N("final", 150,1248, { kicker: "Final", title: "决赛", sub: "巅峰对决 90 分钟" }),
+  N("champ", 150,1388, { kicker: "End", title: "世界杯冠军 🏆", sub: "举起大力神杯", variant: "champ", shape: "terminator" }),
+];
+
+const E = (id, source, target, opt = {}) => ({
+  id, source, target,
+  sourceHandle: opt.sh || "b", targetHandle: opt.th || "t",
+  type: "smoothstep", animated: opt.animated !== false,
+  label: opt.label, labelBgPadding: [7, 4], labelBgBorderRadius: 6,
+  markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(20,22,28,0.42)" },
+  style: opt.style,
+});
+
+const initialEdges = [
+  E("e1", "qual", "draw"),
+  E("e2", "draw", "group"),
+  E("e3", "group", "rank"),
+  E("e4", "rank", "top2",  { label: "每组前 2" }),
+  E("e5", "rank", "third", { label: "最佳第三名" }),
+  E("e6", "rank", "elim",  { sh: "r", th: "tl", label: "出局", animated: false,
+                             style: { stroke: "rgba(20,22,28,0.18)", strokeDasharray: "5 4" } }),
+  E("e7", "top2",  "r32"),
+  E("e8", "third", "r32"),
+  E("e9", "r32", "r16"),
+  E("e10", "r16", "qf"),
+  E("e11", "qf", "sf"),
+  E("e12", "sf", "final", { label: "胜者" }),
+  E("e13", "sf", "third_place", { sh: "r", th: "tl", label: "负者", animated: false,
+                                  style: { stroke: "rgba(20,22,28,0.18)", strokeDasharray: "5 4" } }),
+  E("e14", "final", "champ", { label: "夺冠 🏆", style: { stroke: "rgba(184,146,47,0.85)" } }),
+];
+
+/* ---------- 编辑面板 ---------- */
+function EditPanel({ node, onField, onDelete, onClose }) {
+  if (!node) return null;
+  const d = node.data;
+  return html`
+    <div class="editpanel">
+      <div class="ep-head"><span>编辑节点</span><button class="ep-x" onClick=${onClose}>✕</button></div>
+
+      <label class="ep-l">小标签 / Stage</label>
+      <input class="ep-i" value=${d.kicker || ""} onChange=${(e) => onField("kicker", e.target.value)} />
+
+      <label class="ep-l">主标题</label>
+      <input class="ep-i" value=${d.title || ""} onChange=${(e) => onField("title", e.target.value)} />
+
+      <label class="ep-l">子标题</label>
+      <textarea class="ep-t" rows="3" value=${d.sub || ""} onChange=${(e) => onField("sub", e.target.value)}></textarea>
+
+      <label class="ep-l">形状</label>
+      <select class="ep-i" value=${d.shape || "process"} onChange=${(e) => onField("shape", e.target.value)}>
+        <option value="process">处理（矩形）</option>
+        <option value="terminator">起止（圆角条）</option>
+        <option value="decision">判断（菱形）</option>
+      </select>
+
+      <label class="ep-l">配色</label>
+      <select class="ep-i" value=${d.variant || ""} onChange=${(e) => onField("variant", e.target.value)}>
+        <option value="">普通</option>
+        <option value="start">起点（蓝）</option>
+        <option value="champ">冠军（金）</option>
+        <option value="out">出局（灰虚线）</option>
+      </select>
+
+      <div class="ep-actions">
+        <button class="btn danger" onClick=${onDelete}>删除节点</button>
+        <button class="btn" onClick=${onClose}>完成</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- 连线编辑面板 ---------- */
+function EdgeEditPanel({ edge, onLabel, onDelete, onClose }) {
+  if (!edge) return null;
+  return html`
+    <div class="editpanel">
+      <div class="ep-head"><span>编辑连线</span><button class="ep-x" onClick=${onClose}>✕</button></div>
+      <label class="ep-l">连线文字</label>
+      <input class="ep-i" autoFocus=${true} value=${edge.label || ""}
+             placeholder="如：胜者 / 晋级 / 出局"
+             onChange=${(e) => onLabel(e.target.value)} />
+      <div class="ep-actions">
+        <button class="btn danger" onClick=${onDelete}>删除连线</button>
+        <button class="btn" onClick=${onClose}>完成</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- App ---------- */
+let seq = 1, eseq = 1;
+function App() {
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [editId, setEditId] = useState(null);
+  const [editEdgeId, setEditEdgeId] = useState(null);
+
+  const editNode = nodes.find((n) => n.id === editId) || null;
+  const editEdge = edges.find((e) => e.id === editEdgeId) || null;
+
+  const onConnect = useCallback((params) => {
+    const id = "ne_" + (eseq++);
+    setEdges((eds) => addEdge({
+      ...params, id, type: "smoothstep", animated: true, label: "",
+      labelBgPadding: [7, 4], labelBgBorderRadius: 6,
+      markerEnd: { type: MarkerType.ArrowClosed, color: "rgba(20,22,28,0.42)" },
+    }, eds));
+    setEditId(null); setEditEdgeId(id);
+  }, [setEdges]);
+
+  const onNodeDoubleClick = useCallback((_e, node) => { setEditEdgeId(null); setEditId(node.id); }, []);
+
+  const onEdgeClick = useCallback((_e, edge) => { setEditId(null); setEditEdgeId(edge.id); }, []);
+
+  const onEdgeLabel = useCallback((value) => {
+    setEdges((eds) => eds.map((e) => e.id === editEdgeId ? { ...e, label: value } : e));
+  }, [editEdgeId, setEdges]);
+
+  const deleteEdge = useCallback(() => {
+    setEdges((eds) => eds.filter((e) => e.id !== editEdgeId));
+    setEditEdgeId(null);
+  }, [editEdgeId, setEdges]);
+
+  const onField = useCallback((field, value) => {
+    setNodes((nds) => nds.map((n) => n.id === editId
+      ? { ...n, data: { ...n.data, [field]: value } } : n));
+  }, [editId, setNodes]);
+
+  const deleteNode = useCallback(() => {
+    if (!editId) return;
+    setEdges((eds) => eds.filter((e) => e.source !== editId && e.target !== editId));
+    setNodes((nds) => nds.filter((n) => n.id !== editId));
+    setEditId(null);
+  }, [editId, setNodes, setEdges]);
+
+  const addStage = useCallback(() => {
+    const id = "new_" + (seq++);
+    setNodes((nds) => nds.concat(N(id, 560 + Math.round((seq % 3) * 30), 180 + seq * 26,
+      { kicker: "New", title: "新阶段", sub: "双击改名 · 拖圆点连线" })));
+    setEditId(id);
+  }, [setNodes]);
+
+  return html`
+    <${React.Fragment}>
+      <div class="topbar">
+        <div class="brand">
+          <h1><span class="dot"></span>2026 世界杯 · 赛事流程</h1>
+          <p>双击节点 / 单击连线 → 右侧面板编辑 · 拖圆点新建连线 · 面板内可删 · Delete 也可删</p>
+        </div>
+        <div class="actions">
+          <button class="btn" onClick=${addStage}>＋ 添加阶段</button>
+        </div>
+      </div>
+
+      <${EditPanel} node=${editNode} onField=${onField} onDelete=${deleteNode} onClose=${() => setEditId(null)} />
+      <${EdgeEditPanel} edge=${editEdge} onLabel=${onEdgeLabel} onDelete=${deleteEdge} onClose=${() => setEditEdgeId(null)} />
+
+      <${ReactFlow}
+        nodes=${nodes} edges=${edges}
+        nodeTypes=${nodeTypes}
+        onNodesChange=${onNodesChange}
+        onEdgesChange=${onEdgesChange}
+        onConnect=${onConnect}
+        onNodeDoubleClick=${onNodeDoubleClick}
+        onEdgeClick=${onEdgeClick}
+        fitView
+        fitViewOptions=${{ padding: 0.18 }}
+        minZoom=${0.3}
+        proOptions=${{ hideAttribution: false }}
+        deleteKeyCode=${["Backspace", "Delete"]}
+      >
+        <${Background} variant="dots" gap=${26} size=${1} color="rgba(20,22,28,0.06)" />
+        <${MiniMap}
+          pannable zoomable
+          maskColor="rgba(241,241,244,0.7)"
+          style=${{ background: "#ffffff" }}
+          nodeColor=${(n) => n.data?.variant === "champ" ? "#d8b24a"
+            : n.data?.variant === "out" ? "rgba(20,22,28,0.18)"
+            : "rgba(20,22,28,0.4)"}
+        />
+        <${Controls} showInteractive=${false} />
+      <//>
+    <//>`;
+}
+
+createRoot(document.getElementById("app")).render(html`<${App} />`);
+</script>
+</body>
+</html>

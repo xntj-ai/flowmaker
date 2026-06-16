@@ -1,0 +1,37 @@
+{
+  "title": "2026 世界杯 · 赛事流程",
+  "subtitle": "双击节点 / 单击连线 编辑 · 拖圆点连线 · 面板内可删 · Delete 也可删",
+  "direction": "TB",
+  "nodes": [
+    { "id": "qual",  "x": 356, "y": 0,    "kicker": "Start",    "title": "各大洲预选赛", "sub": "六大洲资格赛产生 48 强", "shape": "terminator", "variant": "start" },
+    { "id": "draw",  "x": 356, "y": 110,  "kicker": "Stage 01", "title": "抽签分组",     "sub": "48 队 → 12 组，每组 4 队" },
+    { "id": "group", "x": 356, "y": 240,  "kicker": "Stage 02", "title": "小组赛",       "sub": "组内单循环，定排名" },
+    { "id": "rank",  "x": 366, "y": 376,  "title": "小组排名？", "shape": "decision" },
+    { "id": "top2",  "x": 108, "y": 536,  "kicker": "前 2 名",  "title": "每组前 2 名",  "sub": "24 队直接晋级" },
+    { "id": "third", "x": 356, "y": 536,  "kicker": "第 3 名",  "title": "最佳第三名",   "sub": "8 个成绩最好的第三名" },
+    { "id": "elim",  "x": 660, "y": 520,  "kicker": "Out",      "title": "其余球队出局", "sub": "剩余第三名 + 全部第四名", "variant": "muted" },
+    { "id": "r32",   "x": 356, "y": 686,  "kicker": "Knockout", "title": "32 强淘汰赛",  "sub": "单场淘汰 · Round of 32" },
+    { "id": "r16",   "x": 356, "y": 814,  "kicker": "Knockout", "title": "16 强",        "sub": "Round of 16" },
+    { "id": "qf",    "x": 356, "y": 942,  "kicker": "Knockout", "title": "1/4 决赛",     "sub": "八强争四强" },
+    { "id": "sf",    "x": 366, "y": 1078, "title": "半决赛胜负？", "shape": "decision" },
+    { "id": "third_place", "x": 660, "y": 1248, "kicker": "排位", "title": "三四名决赛", "sub": "负者 → 决出季军", "variant": "muted" },
+    { "id": "final", "x": 150, "y": 1248, "kicker": "Final",    "title": "决赛",         "sub": "巅峰对决 90 分钟" },
+    { "id": "champ", "x": 150, "y": 1388, "kicker": "End",      "title": "世界杯冠军 🏆", "sub": "举起大力神杯", "shape": "terminator", "variant": "gold" }
+  ],
+  "edges": [
+    { "source": "qual", "target": "draw" },
+    { "source": "draw", "target": "group" },
+    { "source": "group", "target": "rank" },
+    { "source": "rank", "target": "top2",  "label": "每组前 2" },
+    { "source": "rank", "target": "third", "label": "最佳第三名" },
+    { "source": "rank", "target": "elim",  "label": "出局", "dashed": true, "sh": "r", "th": "tl" },
+    { "source": "top2", "target": "r32" },
+    { "source": "third", "target": "r32" },
+    { "source": "r32", "target": "r16" },
+    { "source": "r16", "target": "qf" },
+    { "source": "qf", "target": "sf" },
+    { "source": "sf", "target": "final", "label": "胜者" },
+    { "source": "sf", "target": "third_place", "label": "负者", "dashed": true, "sh": "r", "th": "tl" },
+    { "source": "final", "target": "champ", "label": "夺冠 🏆" }
+  ]
+}
