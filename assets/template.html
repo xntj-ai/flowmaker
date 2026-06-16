@@ -88,14 +88,20 @@
   .gnode-wrap.decision { width: 168px; height: 70px; position: relative; display: flex; align-items: center; justify-content: center; }
   .diamond-svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 5px 12px rgba(20,22,40,0.11)); transition: filter 0.18s ease; }
   .gnode-wrap.decision:hover .diamond-svg { filter: drop-shadow(0 9px 18px rgba(20,22,40,0.16)); }
-  .diamond-svg polygon { fill: rgba(255,255,255,0.92); stroke: rgba(20,22,28,0.2); stroke-width: 1.4; stroke-linejoin: round; transition: stroke 0.18s ease; }
+  /* polygon 的 fill/stroke 改为内联属性（GlassNode 内），CSS 仅保留选中态高亮 */
   .react-flow__node.selected .diamond-svg polygon { stroke: var(--gold); stroke-width: 2; }
   .diamond-content { position: relative; z-index: 1; text-align: center; max-width: 102px; }
   .diamond-content .gn-kicker, .diamond-content .gn-sub { display: none; }
   .diamond-content .gn-title { font-size: 12.5px; font-weight: 500; color: var(--ink-dim); letter-spacing: 0; line-height: 1.4; }
-  .diamond-svg.start polygon { stroke: rgba(60,100,180,0.55); }
-  .diamond-svg.gold polygon { fill: #fbf4dd; stroke: rgba(184,146,47,0.7); }
-  .diamond-svg.muted polygon { fill: #f4f4f6; stroke: rgba(20,22,28,0.24); stroke-dasharray: 5 4; }
+
+  /* 导出扁平模式：关掉 html-to-image 渲染不良的阴影/毛玻璃，底色转纯色 */
+  .react-flow.exporting .gnode {
+    box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    background: #ffffff;
+  }
+  .react-flow.exporting .gnode.gold { background: #fbf4dd; }
+  .react-flow.exporting .gnode.muted { background: #fafafa; }
+  .react-flow.exporting .diamond-svg { filter: none !important; }
 
   .react-flow__handle { width: 8px; height: 8px; background: rgba(20,22,28,0.42); border: 1px solid #fff; }
   .react-flow__handle:hover { background: var(--gold); }
@@ -134,6 +140,7 @@
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1",
     "@xyflow/react": "https://esm.sh/@xyflow/react@12?deps=react@18.3.1,react-dom@18.3.1",
     "@dagrejs/dagre": "https://esm.sh/@dagrejs/dagre@1?bundle",
+    "html-to-image": "https://esm.sh/html-to-image@1.11.13",
     "htm": "https://esm.sh/htm@3.1.1"
   }
 }
@@ -170,10 +177,12 @@
 import React, { useCallback, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
-  ReactFlow, Background, Controls, MiniMap, Handle, Position,
-  addEdge, useNodesState, useEdgesState, MarkerType
+  ReactFlow, ReactFlowProvider, Background, Controls, MiniMap, Handle, Position,
+  addEdge, useNodesState, useEdgesState, useReactFlow,
+  getNodesBounds, getViewportForBounds, MarkerType
 } from "@xyflow/react";
 import dagre from "@dagrejs/dagre";
+import { toPng } from "html-to-image";
 import htm from "htm";
 
 const html = htm.bind(React.createElement);
@@ -196,11 +205,18 @@ function GlassNode({ data }) {
       <${Handle} type="source" position=${Position.Right} id="r" />
     <//>`;
   if (shape === "decision") {
+    const dv = data.variant;
+    const fill = dv === "gold" ? "#fbf4dd" : dv === "muted" ? "#f4f4f6" : "#ffffff";
+    const stroke = dv === "gold" ? "rgba(184,146,47,0.7)"
+      : dv === "muted" ? "rgba(20,22,28,0.24)"
+      : dv === "start" ? "rgba(60,100,180,0.55)" : "rgba(20,22,28,0.2)";
     return html`
       <div class="gnode-wrap decision">
         ${handles}
         <svg class=${"diamond-svg" + v} viewBox="0 0 168 70" preserveAspectRatio="none">
-          <polygon points="84,3 165,35 84,67 3,35" />
+          <polygon points="84,3 165,35 84,67 3,35"
+            fill=${fill} stroke=${stroke} stroke-width="1.4" stroke-linejoin="round"
+            stroke-dasharray=${dv === "muted" ? "5 4" : "0"} />
         </svg>
         <div class="diamond-content">${content}</div>
       </div>`;
@@ -233,9 +249,14 @@ function buildEdges() {
     id: e.id || ("e" + i), source: e.source, target: e.target,
     sourceHandle: e.sh || "b", targetHandle: e.th || "t",
     type: "smoothstep", animated: e.animated ?? !e.dashed,
-    label: e.label || undefined, labelBgPadding: [7, 4], labelBgBorderRadius: 6,
+    label: e.label || undefined,
+    labelStyle: { fill: "#1d1f24", fontWeight: 500 },
+    labelBgStyle: { fill: "#ffffff" },
+    labelBgPadding: [7, 4], labelBgBorderRadius: 6,
     markerEnd: ARROW,
-    style: e.dashed ? { stroke: "rgba(20,22,28,0.18)", strokeDasharray: "5 4" } : undefined,
+    style: e.dashed
+      ? { stroke: "rgba(20,22,28,0.18)", strokeWidth: 1.5, strokeDasharray: "5 4" }
+      : { stroke: "rgba(20,22,28,0.42)", strokeWidth: 1.5 },
   }));
 }
 
@@ -307,11 +328,32 @@ let eseq = 1;
 const INIT_EDGES = buildEdges();
 const INIT_NODES = autoLayout(buildNodes(), INIT_EDGES);
 
-function App() {
+function Flow() {
   const [nodes, setNodes, onNodesChange] = useNodesState(INIT_NODES);
   const [edges, setEdges, onEdgesChange] = useEdgesState(INIT_EDGES);
   const [editId, setEditId] = useState(null);
   const [editEdgeId, setEditEdgeId] = useState(null);
+  const { getNodes } = useReactFlow();
+
+  const onExport = useCallback(() => {
+    const vpEl = document.querySelector(".react-flow__viewport");
+    const rootEl = document.querySelector(".react-flow");
+    if (!vpEl) return;
+    const bounds = getNodesBounds(getNodes());
+    const w = Math.round(bounds.width * 2) + 160;
+    const h = Math.round(bounds.height * 2) + 160;
+    const vp = getViewportForBounds(bounds, w, h, 0.2, 4, 0.12);
+    if (rootEl) rootEl.classList.add("exporting");
+    toPng(vpEl, {
+      backgroundColor: "#f1f1f4", width: w, height: h, pixelRatio: 1,
+      style: { width: w + "px", height: h + "px",
+        transform: `translate(${vp.x}px, ${vp.y}px) scale(${vp.zoom})` },
+    }).then((dataUrl) => {
+      const a = document.createElement("a");
+      a.download = (DATA.title || "flowchart") + ".png";
+      a.href = dataUrl; a.click();
+    }).finally(() => { if (rootEl) rootEl.classList.remove("exporting"); });
+  }, [getNodes]);
 
   const editNode = nodes.find((n) => n.id === editId) || null;
   const editEdge = edges.find((e) => e.id === editEdgeId) || null;
@@ -319,7 +361,9 @@ function App() {
   const onConnect = useCallback((params) => {
     const id = "ne_" + (eseq++);
     setEdges((eds) => addEdge({ ...params, id, type: "smoothstep", animated: true, label: "",
-      labelBgPadding: [7, 4], labelBgBorderRadius: 6, markerEnd: ARROW }, eds));
+      labelStyle: { fill: "#1d1f24", fontWeight: 500 }, labelBgStyle: { fill: "#ffffff" },
+      labelBgPadding: [7, 4], labelBgBorderRadius: 6, markerEnd: ARROW,
+      style: { stroke: "rgba(20,22,28,0.42)", strokeWidth: 1.5 } }, eds));
     setEditId(null); setEditEdgeId(id);
   }, [setEdges]);
 
@@ -357,7 +401,10 @@ function App() {
           <h1><span class="dot"></span>${DATA.title || "flowmaker"}</h1>
           ${DATA.subtitle ? html`<p>${DATA.subtitle}</p>` : null}
         </div>
-        <div class="actions"><button class="btn" onClick=${addNode}>＋ 添加节点</button></div>
+        <div class="actions">
+          <button class="btn" onClick=${onExport}>导出 PNG</button>
+          <button class="btn" onClick=${addNode}>＋ 添加节点</button>
+        </div>
       </div>
 
       <${NodePanel} node=${editNode} onField=${onField} onDelete=${deleteNode} onClose=${() => setEditId(null)} />
@@ -376,6 +423,10 @@ function App() {
         <${Controls} showInteractive=${false} />
       <//>
     <//>`;
+}
+
+function App() {
+  return html`<${ReactFlowProvider}><${Flow} /><//>`;
 }
 
 createRoot(document.getElementById("app")).render(html`<${App} />`);
