@@ -91,6 +91,14 @@
   .browser-bar .url { margin-left: 12px; font-size: 12px; color: var(--ink-faint); font-family: var(--mono); }
   .browser iframe { display: block; width: 100%; height: 560px; border: 0; background: #f1f1f4; }
   .demo-hint { text-align: center; font-size: 13px; color: var(--ink-faint); margin-top: 14px; }
+  .demo-tabs { display: flex; gap: 9px; justify-content: center; margin-bottom: 16px; flex-wrap: wrap; }
+  .dtab {
+    font-family: var(--font); font-size: 13px; padding: 8px 17px; border-radius: 999px;
+    border: 1px solid var(--line); background: var(--glass-strong); color: var(--ink-dim);
+    cursor: pointer; transition: all 0.18s ease;
+  }
+  .dtab:hover { color: var(--ink); border-color: rgba(20,22,28,0.22); }
+  .dtab.active { background: var(--ink); color: #fff; border-color: var(--ink); }
 
   /* sections */
   section { padding: 56px 0; }
@@ -179,7 +187,7 @@
 <header><div class="wrap">
   <div class="badge">◆ Claude Code / Agent Skill · MIT 开源</div>
   <h1 class="hero">一句话，生成<br><span class="accent">可编辑的网页流程图</span></h1>
-  <p class="sub">描述一段流程 → 得到一个<b>单 HTML 文件</b>：浅色玻璃风、判断菱形、可拖拽编辑、一键导出 PNG。零后端，双击即开。</p>
+  <p class="sub">描述一段流程 → 得到一个<b>单 HTML 文件</b>：浅色玻璃风、判断菱形、可拖拽编辑、节点可展开详情、一键导出 PNG。零后端，双击即开。</p>
   <div class="cta">
     <a class="btn primary" href="#demo">▶ 看交互示例</a>
     <a class="btn ghost" href="https://github.com/xntj-ai/flowmaker" target="_blank">在 GitHub 查看</a>
@@ -188,14 +196,18 @@
 </div></header>
 
 <section id="demo" style="padding-top:14px"><div class="wrap">
+  <div class="demo-tabs">
+    <button class="dtab active" data-src="examples/worldcup.html" data-url="worldcup.html">⚽ 世界杯赛制</button>
+    <button class="dtab" data-src="examples/claude-code-china.html" data-url="claude-code-china.html">🛠️ 安装攻略 · 点节点「详情 ▾」看浮层</button>
+  </div>
   <div class="demo-wrap"><div class="browser">
     <div class="browser-bar">
       <span class="d r"></span><span class="d y"></span><span class="d g"></span>
-      <span class="url">flowchart.html — 单文件 · 无后端</span>
+      <span class="url" id="demo-url">worldcup.html — 单文件 · 无后端</span>
     </div>
-    <iframe src="examples/worldcup.html" title="flowmaker 交互示例" loading="lazy"></iframe>
+    <iframe id="demoframe" src="examples/worldcup.html" title="flowmaker 交互示例" loading="lazy"></iframe>
   </div></div>
-  <p class="demo-hint">↑ 这是真实产物，不是截图。拖动节点 · 拖圆点连线 · 双击节点改名 · 单击连线改字 · 右上角导出 PNG</p>
+  <p class="demo-hint">↑ 这是真实产物，不是截图。拖动节点 · 拖圆点连线 · 双击节点改名 · 单击连线改字 · <b>点蓝色「详情 ▾」看展开浮层</b> · 右上角导出 PNG</p>
 </div></section>
 
 <section id="value"><div class="wrap">
@@ -256,6 +268,7 @@
     <div class="row"><span class="ck">✓</span><div><b>增删自如</b><span>＋加节点，面板或 Delete 删除</span></div></div>
     <div class="row"><span class="ck">✓</span><div><b>自动布局</b><span>省略坐标即 dagre 排版，支持 TB/LR</span></div></div>
     <div class="row"><span class="ck">✓</span><div><b>PNG 导出</b><span>整图 2× 清晰度，一键下载</span></div></div>
+    <div class="row"><span class="ck">✓</span><div><b>概述 + 详情浮层</b><span>节点只放概述，点「详情 ▾」看完整内容</span></div></div>
     <div class="row"><span class="ck">✓</span><div><b>三形状 + 四配色</b><span>矩形/圆角条/菱形 × 普通/蓝/金/灰</span></div></div>
     <div class="row"><span class="ck">✓</span><div><b>浅色玻璃美学</b><span>克制灰阶 + 金蓝点缀，ppvi 风格</span></div></div>
   </div>
@@ -297,6 +310,17 @@ git clone https://github.com/xntj-ai/<span class="c-str">flowmaker</span> \
   <div><a href="https://github.com/xntj-ai/flowmaker" target="_blank">github.com/xntj-ai/flowmaker</a> · MIT License</div>
   <div class="made">本页面也是浅色 ppvi 风格 —— 和 flowmaker 的产物同一套设计语言</div>
 </div></footer>
+
+<script>
+  document.querySelectorAll('.dtab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.dtab').forEach(function (x) { x.classList.remove('active'); });
+      b.classList.add('active');
+      document.getElementById('demoframe').src = b.dataset.src;
+      document.getElementById('demo-url').textContent = b.dataset.url + ' — 单文件 · 无后端';
+    });
+  });
+</script>
 
 </body>
 </html>
